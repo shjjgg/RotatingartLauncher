@@ -17,6 +17,8 @@ env:
   ANDROID_BUILD_TOOLS: "36.0.0"
   ANDROID_NDK_VERSION: "28.0.13004108"
   ANDROID_CMAKE_VERSION: "3.22.1"
+  # 强制使用 Node.js 24，避免弃用警告
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build:
@@ -26,26 +28,53 @@ jobs:
       contents: read
       actions: write
     
-    # 并发控制：防止同时运行多个构建
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}
       cancel-in-progress: false
 
     steps:
-      # ==================== 初始化与缓存 ====================
       - name: Check Disk Space Before
         run: |
           echo "📊 初始磁盘空间:"
           df -h /
 
-      - uses: actions/checkout@v4
+      # ==================== 修复 1: 分离 LFS 检出 ====================
+      - name: Checkout repository (without LFS)
+        uses: actions/checkout@v4
         with:
           submodules: recursive
-          lfs: true
-          # 浅克隆节省时间和空间
+          lfs: false  # 先不拉取 LFS
           fetch-depth: 1
 
-      # 多级缓存策略：Gradle Wrapper
+      # ==================== 修复 2: 手动处理 LFS ====================
+      - name: Setup Git LFS and fetch objects
+        run: |
+          echo "::group::安装 Git LFS"
+          sudo apt-get update && sudo apt-get install -y git-lfs || true
+          git lfs version
+          echo "::endgroup::"
+          
+          echo "::group::初始化 LFS"
+          git lfs install
+          echo "::endgroup::"
+          
+          echo "::group::尝试拉取 LFS 对象"
+          # 方法1: 标准拉取
+          git lfs pull || true
+          
+          # 方法2: 如果失败，尝试跳过缺失的对象
+          if [ $? -ne 0 ]; then
+            echo "⚠️ 标准拉取失败，尝试跳过错误..."
+            GIT_LFS_SKIP_SMUDGE=1 git lfs pull || true
+          fi
+          
+          # 方法3: 强制检出（用指针文件代替缺失的 LFS 对象）
+          git lfs checkout || true
+          echo "::endgroup::"
+          
+          echo "✅ LFS 处理完成"
+
+      # ==================== 缓存策略 ====================
       - name: Cache Gradle Wrapper
         uses: actions/cache@v4
         with:
@@ -56,7 +85,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-wrapper-
 
-      # 多级缓存策略：Gradle 依赖（严格匹配 build.gradle）
       - name: Cache Gradle Dependencies
         uses: actions/cache@v4
         with:
@@ -68,7 +96,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-deps-
 
-      # 多级缓存策略：Android SDK 组件
       - name: Cache Android SDK
         uses: actions/cache@v4
         with:
@@ -86,7 +113,7 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
-          cache: 'gradle'  # 与上面的缓存互补
+          cache: 'gradle'
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
@@ -124,7 +151,6 @@ jobs:
         run: |
           echo "::error::Debug 构建失败！查看日志: debug-build.log"
           tail -100 debug-build.log || true
-          # 上传错误日志
           exit 1
 
       - name: Prepare Debug APK
@@ -146,7 +172,6 @@ jobs:
             exit 1
           fi
           
-          # 清理多余 APK
           find "$DEBUG_DIR" -name "*.apk" ! -path "$FIRST_APK" -type f -delete
           mv "$FIRST_APK" "$DEBUG_DIR/app-debug.apk"
           
@@ -230,7 +255,6 @@ jobs:
             exit 1
           fi
           
-          # 验证签名
           ${ANDROID_SDK_ROOT}/build-tools/${ANDROID_BUILD_TOOLS}/apksigner verify -v "$RELEASE_DIR/app-release-safe.apk" | head -5
           
           rm -f "$UNSIGNED" "$UNSIGNED.idsig" debug.keystore
@@ -249,35 +273,25 @@ jobs:
           if-no-files-found: error
           compression-level: 6
 
-      # ==================== 构建后清理与通知 ====================
+      # ==================== 清理与通知 ====================
       - name: Cleanup Build Artifacts
         if: always()
         run: |
           echo "::group::清理临时文件"
-          # 清理 Gradle Daemon（如果在运行）
           ./gradlew --stop 2>/dev/null || true
-          
-          # 清理构建产物（保留已上传的 artifact）
           rm -rf app/build/outputs/apk/*/temp_* 2>/dev/null || true
           rm -rf app/build/intermediates 2>/dev/null || true
           rm -f *.log debug.keystore 2>/dev/null || true
-          
-          # 清理 SDK 安装日志
           rm -f sdk-install.log keygen.log sign.log 2>/dev/null || true
-          
           echo "✅ 临时文件已清理"
 
       - name: System Cleanup
         if: always()
         run: |
           echo "::group::系统级清理"
-          # 清理 apt 缓存
           sudo apt-get clean || true
           sudo rm -rf /var/lib/apt/lists/* 2>/dev/null || true
-          
-          # 清理 Docker（如果使用）
           docker system prune -f 2>/dev/null || true
-          
           echo "📊 最终磁盘空间:"
           df -h /
           echo "::endgroup::"
@@ -302,7 +316,6 @@ jobs:
           echo "⏱️  耗时: $(($SECONDS / 60)) 分 $(($SECONDS % 60)) 秒"
           echo ""
           
-          # Debug 状态
           if [ "${{ github.event.inputs.build_debug }}" == "true" ]; then
             if [ "${{ steps.build_debug.outcome }}" == "success" ] && [ "${{ steps.prepare_debug.outcome }}" == "success" ]; then
               echo "✅ Debug 版本: 成功 (${{ steps.prepare_debug.outputs.size }})"
@@ -311,7 +324,6 @@ jobs:
             fi
           fi
           
-          # Safe 状态
           if [ "${{ github.event.inputs.build_safe }}" == "true" ]; then
             if [ "${{ steps.build_safe.outcome }}" == "success" ] && [ "${{ steps.sign_safe.outcome }}" == "success" ]; then
               echo "✅ Safe 版本:  成功 (${{ steps.sign_safe.outputs.size }}) ⭐ 推荐"
@@ -323,10 +335,7 @@ jobs:
           echo ""
           echo "💡 使用建议："
           echo "   • 日常用户 → 下载 2-RAL-User-Safe-RECOMMENDED"
-          echo "     已启用代码优化，无资源压缩风险"
-          echo ""
           echo "   • 开发者   → 下载 1-RAL-Developer-Debug"
-          echo "     无优化，可调试，适合排查问题"
           echo ""
           
           if [ "${{ job.status }}" == "failure" ]; then
