@@ -98,9 +98,6 @@ sealed class SettingsEvent {
     data class SetShaderLowPrecision(val enabled: Boolean) : SettingsEvent()
     data class SetTargetFps(val fps: Int) : SettingsEvent()
 
-    // 启动器
-    data object OpenPatchManagement : SettingsEvent()
-
     // 开发者
     data class SetLoggingEnabled(val enabled: Boolean) : SettingsEvent()
     data class SetVerboseLogging(val enabled: Boolean) : SettingsEvent()
@@ -111,22 +108,6 @@ sealed class SettingsEvent {
     data class SetCoreClrXiaomiCompat(val enabled: Boolean) : SettingsEvent()
     data class SetFnaMapBufferRangeOpt(val enabled: Boolean) : SettingsEvent()
     data class SetFnaGlPerfDiagnostics(val enabled: Boolean) : SettingsEvent()
-    data object ForceReinstallPatches : SettingsEvent()
-
-    // 操作
-    data object ViewLogs : SettingsEvent()
-    data object ClearCache : SettingsEvent()
-    data object ExportLogs : SettingsEvent()
-    data object ShareLogs : SettingsEvent()
-    data object OpenLicense : SettingsEvent()
-    data object CheckUpdate : SettingsEvent()
-    data object SelectBackgroundImage : SettingsEvent()
-    data object SelectBackgroundVideo : SettingsEvent()
-    data object OpenLanguageSelector : SettingsEvent()
-    data object OpenThemeColorSelector : SettingsEvent()
-    data object OpenRendererSelector : SettingsEvent()
-    data object OpenSponsors : SettingsEvent()
-    data class OpenUrl(val url: String) : SettingsEvent()
 }
 
 /**
@@ -134,23 +115,6 @@ sealed class SettingsEvent {
  */
 sealed class SettingsEffect {
     data class ShowToast(val message: String) : SettingsEffect()
-    data object OpenImagePicker : SettingsEffect()
-    data object OpenVideoPicker : SettingsEffect()
-    data object OpenLanguageDialog : SettingsEffect()
-    data object OpenThemeColorDialog : SettingsEffect()
-    data object OpenRendererDialog : SettingsEffect()
-    data class OpenUrl(val url: String) : SettingsEffect()
-    data object OpenLicensePage : SettingsEffect()
-    data object OpenSponsorsPage : SettingsEffect()
-    data object ExportLogsToFile : SettingsEffect()
-    data object ShareLogs : SettingsEffect()
-    data object ViewLogsPage : SettingsEffect()
-    data object ClearCacheComplete : SettingsEffect()
-    data object ForceReinstallPatchesComplete : SettingsEffect()
-    data class BackgroundOpacityChanged(val opacity: Int) : SettingsEffect()
-    data class VideoSpeedChanged(val speed: Float) : SettingsEffect()
-    data object RestoreDefaultBackgroundComplete : SettingsEffect()
-    data object OpenPatchManagementDialog : SettingsEffect()
 }
 
 /**
@@ -186,10 +150,6 @@ class SettingsViewModel(
             is SettingsEvent.SetVideoPlaybackSpeed -> setVideoPlaybackSpeed(event.speed)
             is SettingsEvent.SetLanguage -> setLanguage(event.language)
             is SettingsEvent.RestoreDefaultBackground -> restoreDefaultBackground()
-            is SettingsEvent.SelectBackgroundImage -> sendEffect(SettingsEffect.OpenImagePicker)
-            is SettingsEvent.SelectBackgroundVideo -> sendEffect(SettingsEffect.OpenVideoPicker)
-            is SettingsEvent.OpenLanguageSelector -> sendEffect(SettingsEffect.OpenLanguageDialog)
-            is SettingsEvent.OpenThemeColorSelector -> sendEffect(SettingsEffect.OpenThemeColorDialog)
 
             // 控制
             is SettingsEvent.SetTouchMultitouch -> setTouchMultitouch(event.enabled)
@@ -203,15 +163,11 @@ class SettingsViewModel(
             is SettingsEvent.SetLowLatencyAudio -> setLowLatencyAudio(event.enabled)
             is SettingsEvent.SetRalAudioBufferSize -> setRalAudioBufferSize(event.size)
             is SettingsEvent.SetRenderer -> setRenderer(event.renderer)
-            is SettingsEvent.OpenRendererSelector -> sendEffect(SettingsEffect.OpenRendererDialog)
             
             // 画质
             is SettingsEvent.SetQualityLevel -> setQualityLevel(event.level)
             is SettingsEvent.SetShaderLowPrecision -> setShaderLowPrecision(event.enabled)
             is SettingsEvent.SetTargetFps -> setTargetFps(event.fps)
-
-            // 启动器
-            is SettingsEvent.OpenPatchManagement -> sendEffect(SettingsEffect.OpenPatchManagementDialog)
 
             // 开发者
             is SettingsEvent.SetLoggingEnabled -> setLoggingEnabled(event.enabled)
@@ -223,17 +179,6 @@ class SettingsViewModel(
             is SettingsEvent.SetCoreClrXiaomiCompat -> setCoreClrXiaomiCompat(event.enabled)
             is SettingsEvent.SetFnaMapBufferRangeOpt -> setFnaMapBufferRangeOpt(event.enabled)
             is SettingsEvent.SetFnaGlPerfDiagnostics -> setFnaGlPerfDiagnostics(event.enabled)
-            is SettingsEvent.ViewLogs -> sendEffect(SettingsEffect.ViewLogsPage)
-            is SettingsEvent.ClearCache -> clearCache()
-            is SettingsEvent.ExportLogs -> sendEffect(SettingsEffect.ExportLogsToFile)
-            is SettingsEvent.ShareLogs -> sendEffect(SettingsEffect.ShareLogs)
-            is SettingsEvent.ForceReinstallPatches -> forceReinstallPatches()
-
-            // 关于
-            is SettingsEvent.OpenLicense -> sendEffect(SettingsEffect.OpenLicensePage)
-            is SettingsEvent.OpenSponsors -> sendEffect(SettingsEffect.OpenSponsorsPage)
-            is SettingsEvent.OpenUrl -> sendEffect(SettingsEffect.OpenUrl(event.url))
-            is SettingsEvent.CheckUpdate -> checkUpdate()
         }
     }
 
@@ -326,7 +271,6 @@ class SettingsViewModel(
         viewModelScope.launch {
             settingsRepository.update { backgroundOpacity = opacity }
             _uiState.update { it.copy(backgroundOpacity = opacity) }
-            sendEffect(SettingsEffect.BackgroundOpacityChanged(opacity))
         }
     }
 
@@ -334,7 +278,6 @@ class SettingsViewModel(
         viewModelScope.launch {
             settingsRepository.update { videoPlaybackSpeed = speed }
             _uiState.update { it.copy(videoPlaybackSpeed = speed) }
-            sendEffect(SettingsEffect.VideoSpeedChanged(speed))
         }
     }
 
@@ -352,8 +295,6 @@ class SettingsViewModel(
                 backgroundOpacity = 0,
                 videoPlaybackSpeed = 1.0f
             ) }
-            sendEffect(SettingsEffect.RestoreDefaultBackgroundComplete)
-            sendEffect(SettingsEffect.ShowToast(getString(Res.string.appearance_background_restored)))
         }
     }
 
@@ -544,25 +485,6 @@ class SettingsViewModel(
         viewModelScope.launch {
             settingsRepository.update { fnaGlPerfDiagnosticsEnabled = enabled }
             _uiState.update { it.copy(fnaGlPerfDiagnosticsEnabled = enabled) }
-        }
-    }
-
-    private fun clearCache() {
-        viewModelScope.launch {
-            sendEffect(SettingsEffect.ClearCacheComplete)
-            sendEffect(SettingsEffect.ShowToast(getString(Res.string.settings_cache_cleared)))
-        }
-    }
-
-    private fun forceReinstallPatches() {
-        viewModelScope.launch {
-            sendEffect(SettingsEffect.ForceReinstallPatchesComplete)
-        }
-    }
-
-    private fun checkUpdate() {
-        viewModelScope.launch {
-            sendEffect(SettingsEffect.ShowToast(getString(Res.string.settings_checking_update)))
         }
     }
 

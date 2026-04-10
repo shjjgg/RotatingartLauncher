@@ -772,7 +772,6 @@ private fun MainActivityContent(
             // 各页面的 Compose 实现
             settingsContent = {
                 SettingsScreenWrapper(
-                    onBack = { navState.navigateToGames() },
                     onCheckLauncherUpdate = onCheckLauncherUpdateClick
                 )
             },
