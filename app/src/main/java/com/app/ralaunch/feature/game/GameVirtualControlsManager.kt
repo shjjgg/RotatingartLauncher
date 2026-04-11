@@ -20,7 +20,7 @@ import org.libsdl.app.SDLSurface
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.material3.MaterialTheme
 import com.app.ralaunch.core.common.DynamicColorManager
-import com.app.ralaunch.shared.core.theme.RaLaunchTheme
+import com.app.ralaunch.core.theme.RaLaunchTheme
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 
@@ -234,7 +234,7 @@ class GameVirtualControlsManager {
 
     fun stop() {
         fpsDisplayView?.stop()
-        com.app.ralaunch.core.common.console.ConsoleManager.stop()
+        com.app.ralaunch.core.common.ConsoleManager.stop()
     }
 
     private fun disableClippingRecursive(view: View) {

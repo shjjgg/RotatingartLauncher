@@ -1,7 +1,6 @@
 package com.app.ralaunch.core.common
 
 import android.app.Activity
-import android.app.Dialog
 import android.content.Context
 import android.content.Intent
 import android.os.Build
@@ -9,7 +8,14 @@ import android.os.Handler
 import android.os.Looper
 import android.os.Process
 import android.util.Log
+import androidx.annotation.StringRes
 import androidx.fragment.app.FragmentActivity
+import com.app.ralaunch.R
+import com.app.ralaunch.RaLaunchApp
+import com.app.ralaunch.core.common.util.AppLogger
+import com.app.ralaunch.core.common.util.ErrorDialog
+import com.app.ralaunch.core.common.util.LocaleManager
+import com.app.ralaunch.feature.crash.CrashReportActivity
 import java.io.PrintWriter
 import java.io.StringWriter
 import java.lang.ref.WeakReference
@@ -50,9 +56,7 @@ class ErrorHandler private constructor() {
                 val stackTrace = getStackTrace(context, throwable)
                 val errorDetails = buildErrorDetails(context, throwable, stackTrace)
 
-                val errorActivityClass = getErrorActivityClass(context) ?: return@setDefaultUncaughtExceptionHandler
-
-                val intent = Intent(context, errorActivityClass).apply {
+                val intent = Intent(context, CrashReportActivity::class.java).apply {
                     putExtra("stack_trace", stackTrace)
                     putExtra("error_details", errorDetails)
                     putExtra("exception_class", throwable.javaClass.name)
@@ -88,7 +92,7 @@ class ErrorHandler private constructor() {
         if (stackTrace.length > maxSize) {
             val truncatedLabel = getLocalizedString(
                 context,
-                "crash_logcat_truncated_prefix",
+                R.string.crash_logcat_truncated_prefix,
                 "...[Logs truncated]..."
             )
             stackTrace = stackTrace.substring(0, maxSize - 50) + "\n$truncatedLabel"
@@ -99,14 +103,14 @@ class ErrorHandler private constructor() {
 
     private fun buildErrorDetails(context: Context, throwable: Throwable, stackTrace: String): String {
         val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
-        val occurredAtLabel = getLocalizedString(context, "crash_time_occurred", "Occurred At")
-        val appVersionLabel = getLocalizedString(context, "crash_app_version", "App Version")
-        val unknownLabel = getLocalizedString(context, "crash_unknown", "Unknown")
-        val deviceModelLabel = getLocalizedString(context, "crash_device_model", "Device Model")
-        val androidLabel = getLocalizedString(context, "crash_android_version", "Android")
-        val errorTypeLabel = getLocalizedString(context, "crash_error_type_label", "Type")
-        val errorMessageLabel = getLocalizedString(context, "crash_error_message_label", "Message")
-        val stackTraceLabel = getLocalizedString(context, "crash_stacktrace_title", "Stack Trace")
+        val occurredAtLabel = getLocalizedString(context, R.string.crash_time_occurred, "Occurred At")
+        val appVersionLabel = getLocalizedString(context, R.string.crash_app_version, "App Version")
+        val unknownLabel = getLocalizedString(context, R.string.crash_unknown, "Unknown")
+        val deviceModelLabel = getLocalizedString(context, R.string.crash_device_model, "Device Model")
+        val androidLabel = getLocalizedString(context, R.string.crash_android_version, "Android")
+        val errorTypeLabel = getLocalizedString(context, R.string.crash_error_type_label, "Type")
+        val errorMessageLabel = getLocalizedString(context, R.string.crash_error_message_label, "Message")
+        val stackTraceLabel = getLocalizedString(context, R.string.crash_stacktrace_title, "Stack Trace")
 
         return buildString {
             append("$occurredAtLabel: ${sdf.format(Date())}\n\n")
@@ -126,24 +130,8 @@ class ErrorHandler private constructor() {
         }
     }
 
-    @Suppress("UNCHECKED_CAST")
-    private fun getErrorActivityClass(context: Context): Class<out Activity>? {
-        return try {
-            Class.forName("com.app.ralaunch.feature.crash.CrashReportActivity") as Class<out Activity>
-        } catch (e: ClassNotFoundException) {
-            Log.e(TAG, "CrashReportActivity not found", e)
-            null
-        }
-    }
-
     private fun getApplicationContext(): Context? {
-        return try {
-            val appClass = Class.forName("com.app.ralaunch.RaLaunchApp")
-            val method = appClass.getMethod("getAppContext")
-            method.invoke(null) as? Context
-        } catch (e: Exception) {
-            null
-        }
+        return runCatching { RaLaunchApp.getAppContext() }.getOrNull()
     }
 
     private fun killProcess() {
@@ -169,19 +157,7 @@ class ErrorHandler private constructor() {
             if (activity.isFinishing || activity.isDestroyed) return@post
 
             try {
-                val errorDialogClass = Class.forName("com.app.ralaunch.core.common.util.ErrorDialog")
-                val createMethod = errorDialogClass.getMethod(
-                    "create",
-                    Context::class.java,
-                    String::class.java,
-                    Throwable::class.java,
-                    Boolean::class.javaPrimitiveType
-                )
-                val dialog = createMethod.invoke(null, activity, title, throwable, isFatal)
-
-                if (dialog is Dialog) {
-                    dialog.show()
-                }
+                ErrorDialog.create(activity, title, throwable, isFatal).show()
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to show error dialog, using log instead", e)
                 if (isFatal) {
@@ -198,18 +174,7 @@ class ErrorHandler private constructor() {
             if (activity.isFinishing || activity.isDestroyed) return@post
 
             try {
-                val errorDialogClass = Class.forName("com.app.ralaunch.core.common.util.ErrorDialog")
-                val createMethod = errorDialogClass.getMethod(
-                    "create",
-                    Context::class.java,
-                    String::class.java,
-                    String::class.java
-                )
-                val dialog = createMethod.invoke(null, activity, title, message)
-
-                if (dialog is Dialog) {
-                    dialog.show()
-                }
+                ErrorDialog.create(activity, title, message).show()
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to show warning dialog, using log instead", e)
                 logError(title, RuntimeException(message), false)
@@ -219,10 +184,8 @@ class ErrorHandler private constructor() {
 
     private fun logError(title: String, throwable: Throwable, isFatal: Boolean) {
         try {
-            val loggerClass = Class.forName("com.app.ralaunch.core.common.util.AppLogger")
-            val errorMethod = loggerClass.getMethod("error", String::class.java, String::class.java, Throwable::class.java)
             val tag = if (isFatal) "FatalError" else "Error"
-            errorMethod.invoke(null, tag, title, throwable)
+            AppLogger.error(tag, title, throwable)
         } catch (e: Exception) {
             Log.e(TAG, title, throwable)
         }
@@ -233,24 +196,12 @@ class ErrorHandler private constructor() {
         return currentActivity?.get()
     }
 
-    private fun getLocalizedString(context: Context?, resId: String, defaultValue: String): String {
+    private fun getLocalizedString(context: Context?, @StringRes resId: Int, defaultValue: String): String {
         if (context == null) return defaultValue
 
         return try {
-            val rClass = Class.forName("${context.packageName}.R\$string")
-            val field = rClass.getField(resId)
-            val stringResId = field.getInt(null)
-
-            var localizedContext: Context = context
-            try {
-                val localeManagerClass = Class.forName("com.app.ralaunch.core.common.util.LocaleManager")
-                val applyLanguageMethod = localeManagerClass.getMethod("applyLanguage", Context::class.java)
-                localizedContext = applyLanguageMethod.invoke(null, context) as Context
-            } catch (e: Exception) {
-                // LocaleManager 不可用，使用原始 Context
-            }
-
-            localizedContext.getString(stringResId)
+            val localizedContext = LocaleManager.applyLanguage(context) ?: context
+            localizedContext.getString(resId)
         } catch (e: Exception) {
             Log.w(TAG, "Failed to get localized string for $resId, using default: $defaultValue")
             defaultValue
@@ -272,20 +223,7 @@ class ErrorHandler private constructor() {
             }
 
             try {
-                val errorDialogClass = Class.forName("com.app.ralaunch.core.common.util.ErrorDialog")
-                val createMethod = errorDialogClass.getMethod(
-                    "create",
-                    Context::class.java,
-                    String::class.java,
-                    String::class.java,
-                    Throwable::class.java,
-                    Boolean::class.javaPrimitiveType
-                )
-                val dialog = createMethod.invoke(null, activity, title, message, exception, isFatal)
-
-                if (dialog is Dialog) {
-                    dialog.show()
-                }
+                ErrorDialog.create(activity, title, message, exception, isFatal).show()
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to show native error dialog, using log instead", e)
                 if (isFatal) {
@@ -365,7 +303,7 @@ class ErrorHandler private constructor() {
             val activity = inst.getActivity()
             val title = inst.getLocalizedString(
                 activity ?: inst.getApplicationContext(),
-                "error_title_default",
+                R.string.error_title_default,
                 "Error"
             )
             handleError(title, throwable, false)
@@ -406,7 +344,7 @@ class ErrorHandler private constructor() {
                     val activity = inst.getActivity()
                     inst.getLocalizedString(
                         activity ?: inst.getApplicationContext(),
-                        "error_operation_failed",
+                        R.string.error_operation_failed,
                         "Operation failed"
                     )
                 }
@@ -429,7 +367,7 @@ class ErrorHandler private constructor() {
                     val activity = inst.getActivity()
                     inst.getLocalizedString(
                         activity ?: inst.getApplicationContext(),
-                        "error_operation_failed",
+                        R.string.error_operation_failed,
                         "Operation failed"
                     )
                 }

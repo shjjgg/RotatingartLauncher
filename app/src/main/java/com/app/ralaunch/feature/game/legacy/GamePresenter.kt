@@ -5,7 +5,7 @@ import com.app.ralaunch.R
 import com.app.ralaunch.core.platform.runtime.GameLauncher
 import com.app.ralaunch.feature.patch.data.Patch
 import com.app.ralaunch.feature.patch.data.PatchManager
-import com.app.ralaunch.shared.core.contract.repository.GameRepositoryV2
+import com.app.ralaunch.core.di.contract.GameRepositoryV2
 import org.koin.java.KoinJavaComponent
 import com.app.ralaunch.core.common.util.AppLogger
 import java.io.BufferedReader

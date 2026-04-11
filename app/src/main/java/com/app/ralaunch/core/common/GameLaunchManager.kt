@@ -1,7 +1,7 @@
 package com.app.ralaunch.core.common
 
 import android.content.Context
-import com.app.ralaunch.shared.core.model.domain.GameItem
+import com.app.ralaunch.core.model.GameItem
 import com.app.ralaunch.feature.game.legacy.GameActivity
 import com.app.ralaunch.core.common.util.AppLogger
 import java.io.File

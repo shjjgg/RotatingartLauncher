@@ -4,7 +4,7 @@ import android.content.Context
 import com.app.ralaunch.core.common.JsonHttpRepositoryClient
 import com.app.ralaunch.core.common.util.AppLogger
 import com.app.ralaunch.core.common.util.LocaleManager
-import com.app.ralaunch.shared.core.util.LocaleHelper
+import com.app.ralaunch.core.common.util.LocaleHelper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable

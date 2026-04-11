@@ -2,8 +2,8 @@ package com.app.ralaunch.core.common.util
 
 import android.util.Log
 import com.app.ralaunch.core.common.SettingsAccess
-import com.app.ralaunch.shared.core.util.Logger
-import com.app.ralaunch.shared.core.util.LogLevel
+import com.app.ralaunch.core.common.util.Logger
+import com.app.ralaunch.core.common.util.LogLevel
 import java.io.File
 
 /**
@@ -11,7 +11,7 @@ import java.io.File
  * - 所有日志输出到 logcat
  * - LogcatReader 捕获 logcat 并保存到文件
  * 
- * 实现 shared 模块的 Logger 接口
+ * 实现核心日志接口
  */
 object AppLogger : Logger {
     private const val TAG = "RALaunch"
@@ -22,9 +22,9 @@ object AppLogger : Logger {
     private var initialized = false
 
     /**
-     * 日志级别 - 使用 shared 模块的 LogLevel
+     * 日志级别 - 使用核心层的 LogLevel
      */
-    @Deprecated("使用 com.app.ralaunch.shared.core.util.LogLevel", ReplaceWith("LogLevel"))
+    @Deprecated("使用 com.app.ralaunch.core.common.util.LogLevel", ReplaceWith("LogLevel"))
     enum class Level(val priority: Int, val tag: String) {
         ERROR(0, "E"),
         WARN(1, "W"),

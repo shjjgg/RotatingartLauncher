@@ -1,7 +1,6 @@
 package com.app.ralaunch.core.di
 
 import android.app.Application
-import com.app.ralaunch.shared.core.di.getAndroidModules
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
@@ -25,7 +24,7 @@ object KoinInitializer {
 
             // 加载模块
             modules(
-                getAndroidModules() + getAppModules()
+                getAppModules()
             )
         }
     }

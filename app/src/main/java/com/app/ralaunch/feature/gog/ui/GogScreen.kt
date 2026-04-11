@@ -8,8 +8,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.unit.dp
-import com.app.ralaunch.shared.core.model.ui.GogGameUi
-import com.app.ralaunch.shared.core.model.ui.GogUiState
+import com.app.ralaunch.feature.gog.model.GogGameUi
+import com.app.ralaunch.feature.gog.model.GogUiState
 import com.app.ralaunch.feature.gog.ui.components.*
 
 /**

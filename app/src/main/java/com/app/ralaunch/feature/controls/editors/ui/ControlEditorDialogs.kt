@@ -16,7 +16,6 @@ import androidx.compose.ui.window.Dialog
 import com.app.ralaunch.R
 import com.app.ralaunch.feature.controls.ControlData
 import com.app.ralaunch.feature.controls.KeyMapper
-import com.app.ralaunch.core.ui.dialog.KeyBindingDialog
 
 /**
  * DPad 按键选择行

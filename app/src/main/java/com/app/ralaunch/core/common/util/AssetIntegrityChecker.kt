@@ -3,7 +3,7 @@ package com.app.ralaunch.core.common.util
 import android.content.Context
 import com.app.ralaunch.R
 import com.app.ralaunch.core.platform.runtime.RuntimeLibraryLoader
-import com.app.ralaunch.shared.core.platform.AppConstants
+import com.app.ralaunch.core.platform.AppConstants
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File

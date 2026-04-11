@@ -14,8 +14,6 @@ import java.io.StringWriter
 
 /**
  * 错误弹窗对话框 - 使用 MaterialAlertDialogBuilder
- * 
- * 保留静态工厂方法以兼容 ErrorHandler 的反射调用
  */
 class ErrorDialog private constructor(
     private val context: Context,

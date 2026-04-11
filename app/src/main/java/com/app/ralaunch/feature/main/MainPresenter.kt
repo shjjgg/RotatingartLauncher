@@ -2,15 +2,15 @@ package com.app.ralaunch.feature.main
 
 import android.content.Context
 import android.content.SharedPreferences
-import com.app.ralaunch.shared.core.platform.AppConstants
+import com.app.ralaunch.core.platform.AppConstants
 import com.app.ralaunch.R
-import com.app.ralaunch.shared.core.model.domain.GameItem
-import com.app.ralaunch.shared.core.contract.repository.GameRepositoryV2
-import com.app.ralaunch.shared.core.model.ui.GameItemUi
-import com.app.ralaunch.shared.core.model.ui.applyFromUiModel
+import com.app.ralaunch.core.model.GameItem
+import com.app.ralaunch.core.di.contract.GameRepositoryV2
+import com.app.ralaunch.core.model.GameItemUi
+import com.app.ralaunch.core.model.applyFromUiModel
 import com.app.ralaunch.core.common.GameLaunchManager
-import com.app.ralaunch.core.common.GameDeletionManager
-import com.app.ralaunch.core.ui.base.BasePresenter
+import com.app.ralaunch.core.di.service.GameDeletionManager
+import com.app.ralaunch.core.ui.BasePresenter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

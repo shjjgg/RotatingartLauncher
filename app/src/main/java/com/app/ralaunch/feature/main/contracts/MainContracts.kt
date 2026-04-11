@@ -1,8 +1,8 @@
 package com.app.ralaunch.feature.main.contracts
 
 import com.app.ralaunch.feature.main.background.BackgroundType
-import com.app.ralaunch.shared.core.model.domain.GameItem
-import com.app.ralaunch.shared.core.model.ui.GameItemUi
+import com.app.ralaunch.core.model.GameItem
+import com.app.ralaunch.core.model.GameItemUi
 
 data class MainUiState(
     val games: List<GameItemUi> = emptyList(),
