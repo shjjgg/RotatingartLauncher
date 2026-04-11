@@ -55,6 +55,14 @@
     <string name="settings_about">Acerca de</string>
     <string name="settings_appearance">Apariencia</string>
     <string name="settings_control">Controles</string>
+    <string name="settings_controls_controller_section">Controlador</string>
+    <string name="settings_controls_mouse_right_stick_subtitle">Mapea el movimiento del ratón al stick derecho</string>
+    <string name="settings_controls_mouse_right_stick_title">Stick derecho del ratón</string>
+    <string name="settings_controls_multitouch_subtitle">Permite múltiples puntos táctiles simultáneos</string>
+    <string name="settings_controls_multitouch_title">Multitáctil</string>
+    <string name="settings_controls_touch_section">Táctil</string>
+    <string name="settings_controls_vibration_section">Vibración</string>
+    <string name="settings_controls_vibration_strength_title">Intensidad de vibración</string>
     <string name="settings_developer">Configuración avanzada</string>
     <string name="settings_game">Juego</string>
     <string name="settings_launcher">Lanzador</string>
@@ -62,6 +70,8 @@
     <string name="thread_affinity_big_core_desc">Vincular el hilo principal a núcleos grandes para mejor rendimiento</string>
     <string name="permission_grant">Conceder permiso</string>
     <string name="select_file">Seleccionar archivo</string>
+    <string name="virtual_controller_as_first">Controlador virtual como primer controlador</string>
+    <string name="virtual_controller_as_first_desc">Registrar controlador virtual como el primer controlador (algunos juegos solo reconocen el primer controlador)</string>
 
     <string name="about_build_label">Compilación</string>
     <string name="about_core_developer">Desarrollador principal</string>
@@ -127,7 +137,7 @@
     <string name="settings_developer_concurrent_gc_subtitle">Habilitar recolección de basura concurrente</string>
     <string name="settings_developer_concurrent_gc_title">GC concurrente</string>
     <string name="settings_developer_dotnet_section">.NET Runtime</string>
-    <string name="settings_developer_export_logs_subtitle">Compartir archivos de registro para depuración</string>
+    <string name="settings_developer_export_logs_subtitle">Exportar archivos de registro a un archivo local</string>
     <string name="settings_developer_export_logs_title">Exportar registros</string>
     <string name="settings_developer_fna_section">Optimización FNA</string>
     <string name="settings_developer_kill_launcher_ui_subtitle">Liberar más memoria para el juego</string>
@@ -144,9 +154,11 @@
     <string name="settings_developer_tiered_compilation_subtitle">Habilitar optimización de compilación por niveles</string>
     <string name="settings_developer_tiered_compilation_title">Compilación por niveles</string>
     <string name="settings_developer_coreclr_compat_title">Compatibilidad CoreCLR (Xiaomi)</string>
-    <string name="settings_developer_coreclr_compat_subtitle">Reintentar tModLoader con hooks de compatibilidad cuando falle la inicialización de CoreCLR en algunos dispositivos Xiaomi</string>
+    <string name="settings_developer_coreclr_compat_subtitle">Habilita hooks de compatibilidad orientados a Xiaomi y ajustes de arranque más seguros cuando falle la inicialización de CoreCLR en dispositivos Xiaomi afectados</string>
     <string name="settings_developer_verbose_logging_subtitle">Mostrar más información de depuración</string>
     <string name="settings_developer_verbose_logging_title">Registro detallado</string>
+    <string name="settings_developer_share_logs_subtitle">Compartir archivos de registro para depuración</string>
+    <string name="settings_developer_share_logs_title">Compartir registros</string>
     <string name="settings_developer_view_logs_subtitle">Ver registros recientes de ejecución</string>
     <string name="settings_developer_view_logs_title">Ver registros</string>
     <string name="settings_fps_30">30 FPS</string>
@@ -179,6 +191,8 @@
     <string name="settings_quality_medium">Calidad media</string>
     <string name="settings_reextract_runtime_title">Reextraer bibliotecas de runtime</string>
     <string name="settings_restart_required_toast">Reinicia el juego para aplicar.</string>
+    <string name="settings_vibration">Retroalimentación de vibración</string>
+    <string name="settings_vibration_desc">Proporcionar retroalimentación de vibración al presionar teclas</string>
     <string name="settings_logs_empty">Aún no hay registros</string>
     <string name="settings_logs_title">Visor de registros</string>
     <string name="settings_select_category_prompt">Selecciona una categoría de configuración</string>

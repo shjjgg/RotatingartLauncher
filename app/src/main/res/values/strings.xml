@@ -187,6 +187,8 @@
     <string name="settings_fps_limit_applied_toast">FPS limit set to %1$s. Restart game to apply.</string>
     <string name="settings_checking_update">Checking for updates...</string>
     <string name="common_auto">Auto</string>
+    <string name="common_on">On</string>
+    <string name="common_off">Off</string>
     <string name="settings_game_audio_buffer_title">Audio Buffer Size</string>
     <string name="settings_game_audio_buffer_subtitle">Set FAudio and FMOD buffer size; lower values reduce audio latency but may increase stutter risk</string>
     <string name="settings_game_quality_section">Quality</string>
@@ -1794,6 +1796,7 @@
     <string name="settings_controls_multitouch_subtitle">Allow multiple simultaneous touch points</string>
     <string name="settings_controls_mouse_right_stick_title">Mouse Right Stick</string>
     <string name="settings_controls_mouse_right_stick_subtitle">Map mouse movement to right stick</string>
+    <string name="settings_controls_controller_section">Controller</string>
     <string name="settings_controls_vibration_section">Vibration</string>
     <string name="settings_controls_vibration_strength_title">Vibration Strength</string>
     <string name="settings_game_performance_section">Performance</string>
@@ -2052,7 +2055,9 @@
     <string name="settings_developer_view_logs_title">View Logs</string>
     <string name="settings_developer_view_logs_subtitle">View recent runtime logs</string>
     <string name="settings_developer_export_logs_title">Export Logs</string>
-    <string name="settings_developer_export_logs_subtitle">Share log files for debugging</string>
+    <string name="settings_developer_export_logs_subtitle">Export log files to a local file</string>
+    <string name="settings_developer_share_logs_title">Share Logs</string>
+    <string name="settings_developer_share_logs_subtitle">Share log files for debugging</string>
     <string name="settings_developer_performance_section">Performance</string>
     <string name="settings_developer_kill_launcher_ui_title">Close Launcher UI After Launch</string>
     <string name="settings_developer_kill_launcher_ui_subtitle">Free more memory for the game</string>
@@ -2066,6 +2071,10 @@
     <string name="settings_developer_fna_section">FNA Optimization</string>
     <string name="settings_developer_map_buffer_range_title">MapBufferRange Optimization</string>
     <string name="settings_developer_map_buffer_range_subtitle">Enable OpenGL buffer optimization</string>
+    <string name="settings_developer_gl_perf_diag_title">GL Performance Diagnostics</string>
+    <string name="settings_developer_gl_perf_diag_subtitle">Show draw/upload bottleneck hints near FPS text</string>
+    <string name="settings_developer_coreclr_compat_title">CoreCLR Xiaomi Compatibility</string>
+    <string name="settings_developer_coreclr_compat_subtitle">Enable Xiaomi-targeted compatibility hooks and safer startup settings when CoreCLR initialization fails on affected Xiaomi devices</string>
     <string name="settings_developer_maintenance_section">Maintenance</string>
     <string name="settings_developer_clear_cache_title">Clear Cache</string>
     <string name="settings_developer_clear_cache_subtitle">Clean application cache files</string>

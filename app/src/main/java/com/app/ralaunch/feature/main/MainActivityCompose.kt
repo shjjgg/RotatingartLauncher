@@ -53,6 +53,7 @@ import com.app.ralaunch.core.common.PermissionManager
 import com.app.ralaunch.core.common.ThemeManager
 import com.app.ralaunch.core.common.MessageHelper
 import com.app.ralaunch.core.platform.android.provider.RaLaunchFileProvider
+import com.app.ralaunch.shared.core.model.domain.BackgroundType as SettingsBackgroundType
 import com.app.ralaunch.shared.core.platform.AppConstants
 import com.app.ralaunch.shared.core.navigation.*
 import com.app.ralaunch.shared.core.theme.AppThemeState
@@ -73,6 +74,7 @@ import com.app.ralaunch.feature.main.screens.DownloadScreenWrapper
 import com.app.ralaunch.feature.main.screens.FileBrowserScreenWrapper
 import com.app.ralaunch.feature.main.screens.ImportScreenWrapper
 import com.app.ralaunch.feature.main.screens.AnnouncementScreenWrapper
+import com.app.ralaunch.feature.main.screens.RESTORE_SETTINGS_AFTER_RECREATE_KEY
 import com.app.ralaunch.feature.main.screens.SettingsScreenWrapper
 import com.app.ralaunch.feature.main.screens.buildRendererOptions
 import com.app.ralaunch.feature.main.MainViewModel
@@ -156,8 +158,10 @@ class MainActivityCompose : BaseActivity() {
             // 根据 AppThemeState 计算背景类型
             val backgroundType = remember(bgType, bgImagePath, bgVideoPath) {
                 when (bgType) {
-                    1 -> if (bgImagePath.isNotEmpty()) BackgroundType.Image(bgImagePath) else BackgroundType.None
-                    2 -> if (bgVideoPath.isNotEmpty()) BackgroundType.Video(bgVideoPath) else BackgroundType.None
+                    SettingsBackgroundType.IMAGE ->
+                        if (bgImagePath.isNotEmpty()) BackgroundType.Image(bgImagePath) else BackgroundType.None
+                    SettingsBackgroundType.VIDEO ->
+                        if (bgVideoPath.isNotEmpty()) BackgroundType.Video(bgVideoPath) else BackgroundType.None
                     else -> BackgroundType.None
                 }
             }
@@ -312,8 +316,8 @@ class MainActivityCompose : BaseActivity() {
 
     private fun checkRestoreSettings() {
         val prefs = getSharedPreferences(AppConstants.PREFS_NAME, MODE_PRIVATE)
-        if (prefs.getBoolean("restore_settings_after_recreate", false)) {
-            prefs.edit().putBoolean("restore_settings_after_recreate", false).apply()
+        if (prefs.getBoolean(RESTORE_SETTINGS_AFTER_RECREATE_KEY, false)) {
+            prefs.edit().putBoolean(RESTORE_SETTINGS_AFTER_RECREATE_KEY, false).apply()
             navState.navigateToSettings()
         }
     }
@@ -323,18 +327,13 @@ class MainActivityCompose : BaseActivity() {
      */
     private fun initializeThemeState() {
         val settings = SettingsAccess
-        val bgType = when (settings.backgroundType?.lowercase()) {
-            "image" -> 1
-            "video" -> 2
-            else -> 0
-        }
-        
+
         AppThemeState.initializeState(
             themeMode = settings.themeMode,
             themeColor = settings.themeColor,
-            backgroundType = bgType,
-            backgroundImagePath = settings.backgroundImagePath ?: "",
-            backgroundVideoPath = settings.backgroundVideoPath ?: "",
+            backgroundType = settings.backgroundType,
+            backgroundImagePath = settings.backgroundImagePath,
+            backgroundVideoPath = settings.backgroundVideoPath,
             backgroundOpacity = settings.backgroundOpacity,
             videoPlaybackSpeed = settings.videoPlaybackSpeed
         )
@@ -771,7 +770,6 @@ private fun MainActivityContent(
             // 各页面的 Compose 实现
             settingsContent = {
                 SettingsScreenWrapper(
-                    onBack = { navState.navigateToGames() },
                     onCheckLauncherUpdate = onCheckLauncherUpdateClick
                 )
             },

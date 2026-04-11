@@ -182,6 +182,8 @@
     <string name="settings_fps_limit_applied_toast">帧率限制已设置为%1$s，重启游戏后生效</string>
     <string name="settings_checking_update">正在检查更新...</string>
     <string name="common_auto">自动</string>
+    <string name="common_on">开启</string>
+    <string name="common_off">关闭</string>
     <string name="settings_game_audio_buffer_title">音频缓冲区大小</string>
     <string name="settings_game_audio_buffer_subtitle">设置 FAudio 和 FMOD 的缓冲区大小，较小的值可降低音频延迟但可能增加断音风险</string>
     <string name="settings_game_quality_section">画质</string>
@@ -1624,6 +1626,7 @@
     <string name="settings_controls_multitouch_subtitle">允许同时多个触控点</string>
     <string name="settings_controls_mouse_right_stick_title">鼠标右摇杆</string>
     <string name="settings_controls_mouse_right_stick_subtitle">鼠标移动映射到右摇杆</string>
+    <string name="settings_controls_controller_section">控制器</string>
     <string name="settings_controls_vibration_section">震动</string>
     <string name="settings_controls_vibration_strength_title">震动强度</string>
     <string name="settings_game_performance_section">性能</string>
@@ -1733,7 +1736,9 @@
     <string name="settings_developer_view_logs_title">查看日志</string>
     <string name="settings_developer_view_logs_subtitle">查看最近的运行日志</string>
     <string name="settings_developer_export_logs_title">导出日志</string>
-    <string name="settings_developer_export_logs_subtitle">分享日志文件以便调试</string>
+    <string name="settings_developer_export_logs_subtitle">将日志文件导出到本地文件</string>
+    <string name="settings_developer_share_logs_title">分享日志</string>
+    <string name="settings_developer_share_logs_subtitle">分享日志文件以便调试</string>
     <string name="settings_developer_performance_section">性能</string>
     <string name="settings_developer_kill_launcher_ui_title">启动后关闭启动器UI</string>
     <string name="settings_developer_kill_launcher_ui_subtitle">释放更多内存给游戏</string>
@@ -1747,6 +1752,10 @@
     <string name="settings_developer_fna_section">FNA 优化</string>
     <string name="settings_developer_map_buffer_range_title">MapBufferRange 优化</string>
     <string name="settings_developer_map_buffer_range_subtitle">启用 OpenGL 缓冲区优化</string>
+    <string name="settings_developer_gl_perf_diag_title">GL 性能诊断</string>
+    <string name="settings_developer_gl_perf_diag_subtitle">在 FPS 文本附近显示 Draw/上传瓶颈提示</string>
+    <string name="settings_developer_coreclr_compat_title">CoreCLR 小米兼容模式</string>
+    <string name="settings_developer_coreclr_compat_subtitle">当受影响的小米设备上 CoreCLR 初始化失败时，启用面向小米的兼容 hooks 和更稳妥的启动设置</string>
     <string name="settings_developer_maintenance_section">维护</string>
     <string name="settings_developer_clear_cache_title">清除缓存</string>
     <string name="settings_developer_clear_cache_subtitle">清理应用缓存文件</string>
