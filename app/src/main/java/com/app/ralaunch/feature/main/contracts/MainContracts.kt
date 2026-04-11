@@ -1,6 +1,6 @@
 package com.app.ralaunch.feature.main.contracts
 
-import com.app.ralaunch.feature.main.background.BackgroundType
+import com.app.ralaunch.feature.main.ui.background.BackgroundType
 import com.app.ralaunch.core.model.GameItem
 import com.app.ralaunch.core.model.GameItemUi
 

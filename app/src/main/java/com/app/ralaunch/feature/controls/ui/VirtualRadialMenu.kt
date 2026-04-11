@@ -1,4 +1,4 @@
-package com.app.ralaunch.feature.controls.views
+package com.app.ralaunch.feature.controls.ui
 
 import android.animation.ValueAnimator
 import android.content.Context

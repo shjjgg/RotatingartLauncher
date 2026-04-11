@@ -5,7 +5,7 @@ import android.content.Context
 import android.util.Log
 import com.app.ralaunch.feature.controls.bridges.ControlInputBridge
 import com.app.ralaunch.feature.controls.bridges.SDLInputBridge
-import com.app.ralaunch.feature.game.legacy.GameActivity
+import com.app.ralaunch.feature.game.ui.legacy.GameActivity
 
 object ControlSpecialActionHandler {
     private const val TAG = "ControlSpecialAction"

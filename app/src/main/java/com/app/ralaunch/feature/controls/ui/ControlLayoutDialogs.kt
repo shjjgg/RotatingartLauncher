@@ -1,4 +1,4 @@
-package com.app.ralaunch.feature.main.screens
+package com.app.ralaunch.feature.controls.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*

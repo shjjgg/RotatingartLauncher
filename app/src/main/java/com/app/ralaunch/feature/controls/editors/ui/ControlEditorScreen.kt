@@ -21,10 +21,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.app.ralaunch.R
 import com.app.ralaunch.feature.controls.ControlData
-import com.app.ralaunch.feature.controls.editors.ControlEditorViewModel
+import com.app.ralaunch.feature.controls.editors.vm.ControlEditorViewModel
 import com.app.ralaunch.feature.controls.packs.ControlLayout
-import com.app.ralaunch.feature.controls.views.ControlLayout as ControlLayoutView
-import com.app.ralaunch.feature.controls.views.GridOverlayView
+import com.app.ralaunch.feature.controls.ui.ControlLayout as ControlLayoutView
+import com.app.ralaunch.feature.controls.ui.GridOverlayView
 import com.app.ralaunch.feature.controls.bridges.DummyInputBridge
 import kotlin.math.roundToInt
 

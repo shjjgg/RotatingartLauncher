@@ -1,4 +1,4 @@
-package com.app.ralaunch.feature.main.screens
+package com.app.ralaunch.feature.installer.ui
 
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.*

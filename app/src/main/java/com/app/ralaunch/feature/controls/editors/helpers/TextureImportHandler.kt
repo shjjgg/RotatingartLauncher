@@ -10,7 +10,7 @@ import com.app.ralaunch.R
 import com.app.ralaunch.feature.controls.ControlData
 import com.app.ralaunch.feature.controls.packs.ControlPackManager
 import org.koin.java.KoinJavaComponent
-import com.app.ralaunch.feature.controls.editors.ControlEditorActivity
+import com.app.ralaunch.feature.controls.editors.ui.ControlEditorActivity
 import java.io.File
 import java.io.FileOutputStream
 

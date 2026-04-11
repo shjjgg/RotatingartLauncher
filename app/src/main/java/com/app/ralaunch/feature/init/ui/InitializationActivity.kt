@@ -19,9 +19,9 @@ import com.app.ralaunch.core.di.service.PermissionManager
 import com.app.ralaunch.core.extractor.ArchiveExtractor
 import com.app.ralaunch.core.platform.AppConstants
 import com.app.ralaunch.core.theme.RaLaunchTheme
-import com.app.ralaunch.feature.init.InitializationScreen
+import com.app.ralaunch.feature.init.ui.InitializationScreen
 import com.app.ralaunch.feature.init.model.ComponentState
-import com.app.ralaunch.feature.main.MainActivityCompose
+import com.app.ralaunch.feature.main.ui.MainActivityCompose
 import java.io.File
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean

@@ -1,4 +1,4 @@
-package com.app.ralaunch.feature.main.screens
+package com.app.ralaunch.feature.controls.ui
 
 import android.net.Uri
 import android.widget.Toast
@@ -26,7 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.app.ralaunch.R
-import com.app.ralaunch.feature.controls.editors.ControlEditorActivity
+import com.app.ralaunch.feature.controls.editors.ui.ControlEditorActivity
 import org.koin.java.KoinJavaComponent
 import com.app.ralaunch.feature.controls.packs.ControlPackInfo
 import com.app.ralaunch.feature.controls.packs.ControlPackManager

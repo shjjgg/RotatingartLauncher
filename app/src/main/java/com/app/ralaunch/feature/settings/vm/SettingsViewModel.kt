@@ -1,4 +1,4 @@
-package com.app.ralaunch.feature.settings
+package com.app.ralaunch.feature.settings.vm
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -10,6 +10,7 @@ import com.app.ralaunch.core.model.ThemeMode
 import com.app.ralaunch.core.di.contract.SettingsRepositoryV2
 import com.app.ralaunch.core.common.util.getAppString
 import com.app.ralaunch.R
+import com.app.ralaunch.feature.settings.ui.SettingsCategory
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow

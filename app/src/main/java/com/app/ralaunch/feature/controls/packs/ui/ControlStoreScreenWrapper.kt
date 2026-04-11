@@ -1,4 +1,4 @@
-package com.app.ralaunch.feature.main.screens
+package com.app.ralaunch.feature.controls.packs.ui
 
 import android.app.Activity
 import android.widget.Toast
@@ -12,9 +12,7 @@ import androidx.lifecycle.ViewModelStoreOwner
 import com.app.ralaunch.R
 import com.app.ralaunch.feature.controls.packs.ControlPackItem
 import com.app.ralaunch.feature.controls.packs.ControlPackRepositoryService
-import com.app.ralaunch.feature.controls.packs.ui.ControlPackScreen
-import com.app.ralaunch.feature.controls.packs.ui.ControlPackViewModel
-import com.app.ralaunch.feature.controls.packs.ui.PackPreviewDialog
+import com.app.ralaunch.feature.controls.packs.vm.ControlPackViewModel
 
 /**
  * 控制包商店页面 Wrapper

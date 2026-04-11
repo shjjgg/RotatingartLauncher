@@ -1,4 +1,4 @@
-package com.app.ralaunch.feature.main.screens
+package com.app.ralaunch.feature.announcement.ui
 
 import androidx.activity.ComponentActivity
 import androidx.compose.animation.AnimatedContent
@@ -55,8 +55,8 @@ import com.app.ralaunch.R
 import com.app.ralaunch.feature.announcement.AnnouncementItem
 import com.app.ralaunch.feature.announcement.AnnouncementUiEvent
 import com.app.ralaunch.feature.announcement.AnnouncementUiState
-import com.app.ralaunch.feature.announcement.AnnouncementViewModel
-import com.app.ralaunch.feature.announcement.AnnouncementViewModelFactory
+import com.app.ralaunch.feature.announcement.vm.AnnouncementViewModel
+import com.app.ralaunch.feature.announcement.vm.AnnouncementViewModelFactory
 import com.app.ralaunch.core.ui.component.GlassSurface
 import dev.jeziellago.compose.markdowntext.MarkdownText
 

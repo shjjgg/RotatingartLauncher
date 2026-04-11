@@ -1,4 +1,4 @@
-package com.app.ralaunch.feature.init
+package com.app.ralaunch.feature.init.ui
 
 import android.content.Context
 import android.content.Intent

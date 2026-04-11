@@ -1,4 +1,4 @@
-package com.app.ralaunch.feature.main.screens
+package com.app.ralaunch.feature.gog.ui
 
 import android.content.Intent
 import android.net.Uri

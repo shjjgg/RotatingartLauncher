@@ -1,4 +1,4 @@
-package com.app.ralaunch.feature.main.screens
+package com.app.ralaunch.feature.settings.ui
 
 import android.app.Activity
 import android.content.Context
@@ -15,9 +15,10 @@ import com.app.ralaunch.core.ui.dialog.RendererOption
 import com.app.ralaunch.core.model.BackgroundType
 import com.app.ralaunch.core.di.contract.SettingsRepositoryV2
 import com.app.ralaunch.core.platform.AppConstants
-import com.app.ralaunch.feature.settings.*
+import com.app.ralaunch.feature.settings.vm.SettingsEvent
+import com.app.ralaunch.feature.settings.vm.SettingsViewModel
 import com.app.ralaunch.core.theme.AppThemeState
-import com.app.ralaunch.feature.sponsor.SponsorsActivity
+import com.app.ralaunch.feature.sponsor.ui.SponsorsActivity
 import com.app.ralaunch.core.common.util.AppLogger
 import com.app.ralaunch.core.common.util.LocaleManager
 import kotlinx.coroutines.Dispatchers

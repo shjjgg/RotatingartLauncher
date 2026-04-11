@@ -1,4 +1,4 @@
-package com.app.ralaunch.feature.sponsor
+package com.app.ralaunch.feature.sponsor.ui
 
 import android.content.Intent
 import android.graphics.Color as AndroidColor
@@ -34,6 +34,10 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.ralaunch.R
+import com.app.ralaunch.feature.sponsor.Sponsor
+import com.app.ralaunch.feature.sponsor.SponsorRepository
+import com.app.ralaunch.feature.sponsor.SponsorRepositoryService
+import com.app.ralaunch.feature.sponsor.SponsorTier
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch

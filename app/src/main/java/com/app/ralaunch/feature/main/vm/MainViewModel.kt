@@ -1,4 +1,4 @@
-package com.app.ralaunch.feature.main
+package com.app.ralaunch.feature.main.vm
 
 import android.content.Context
 import android.content.pm.PackageManager

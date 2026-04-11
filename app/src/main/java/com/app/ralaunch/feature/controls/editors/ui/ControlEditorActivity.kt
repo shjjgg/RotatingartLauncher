@@ -1,4 +1,4 @@
-package com.app.ralaunch.feature.controls.editors
+package com.app.ralaunch.feature.controls.editors.ui
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -17,6 +17,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import com.app.ralaunch.feature.controls.editors.ui.ControlEditorScreen
+import com.app.ralaunch.feature.controls.editors.vm.ControlEditorViewModel
 import com.app.ralaunch.core.theme.AppThemeState
 import com.app.ralaunch.core.theme.RaLaunchTheme
 import com.app.ralaunch.feature.controls.packs.ControlPackManager

@@ -1,4 +1,4 @@
-package com.app.ralaunch.feature.controls.views
+package com.app.ralaunch.feature.controls.ui
 
 import android.annotation.SuppressLint
 import android.content.Context

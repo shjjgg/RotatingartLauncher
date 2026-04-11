@@ -1,4 +1,4 @@
-package com.app.ralaunch.feature.main
+package com.app.ralaunch.feature.main.ui
 
 import android.app.DownloadManager
 import android.content.BroadcastReceiver
@@ -59,8 +59,8 @@ import com.app.ralaunch.core.navigation.*
 import com.app.ralaunch.core.theme.AppThemeState
 import com.app.ralaunch.core.theme.RaLaunchTheme
 import com.app.ralaunch.core.ui.BaseActivity
-import com.app.ralaunch.feature.main.background.AppBackground
-import com.app.ralaunch.feature.main.background.BackgroundType
+import com.app.ralaunch.feature.main.ui.background.AppBackground
+import com.app.ralaunch.feature.main.ui.background.BackgroundType
 import com.app.ralaunch.core.model.GameItemUi
 import com.app.ralaunch.feature.main.contracts.ImportUiState
 import com.app.ralaunch.feature.main.contracts.AppUpdateUiModel
@@ -68,15 +68,17 @@ import com.app.ralaunch.feature.main.contracts.ForceAnnouncementUiModel
 import com.app.ralaunch.feature.main.contracts.MainUiEffect
 import com.app.ralaunch.feature.main.contracts.MainUiEvent
 import com.app.ralaunch.feature.main.contracts.MainUiState
-import com.app.ralaunch.feature.main.screens.ControlLayoutScreenWrapper
-import com.app.ralaunch.feature.main.screens.ControlStoreScreenWrapper
-import com.app.ralaunch.feature.main.screens.DownloadScreenWrapper
-import com.app.ralaunch.feature.main.screens.FileBrowserScreenWrapper
-import com.app.ralaunch.feature.main.screens.ImportScreenWrapper
-import com.app.ralaunch.feature.main.screens.AnnouncementScreenWrapper
-import com.app.ralaunch.feature.main.screens.RESTORE_SETTINGS_AFTER_RECREATE_KEY
-import com.app.ralaunch.feature.main.screens.SettingsScreenWrapper
-import com.app.ralaunch.feature.main.screens.buildRendererOptions
+import com.app.ralaunch.feature.announcement.ui.AnnouncementScreenWrapper
+import com.app.ralaunch.feature.controls.packs.ui.ControlStoreScreenWrapper
+import com.app.ralaunch.feature.controls.ui.ControlLayoutScreenWrapper
+import com.app.ralaunch.feature.filebrowser.ui.FileBrowserScreenWrapper
+import com.app.ralaunch.feature.gog.ui.DownloadScreenWrapper
+import com.app.ralaunch.feature.installer.ui.ImportScreenWrapper
+import com.app.ralaunch.feature.main.vm.MainViewModel
+import com.app.ralaunch.feature.main.vm.MainViewModelFactory
+import com.app.ralaunch.feature.settings.ui.RESTORE_SETTINGS_AFTER_RECREATE_KEY
+import com.app.ralaunch.feature.settings.ui.SettingsScreenWrapper
+import com.app.ralaunch.feature.settings.ui.buildRendererOptions
 import com.app.ralaunch.core.common.util.AppLogger
 import com.app.ralaunch.core.common.util.DensityAdapter
 import com.app.ralaunch.core.common.ErrorHandler

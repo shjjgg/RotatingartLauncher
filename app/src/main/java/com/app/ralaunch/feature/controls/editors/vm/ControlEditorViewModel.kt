@@ -1,4 +1,4 @@
-package com.app.ralaunch.feature.controls.editors
+package com.app.ralaunch.feature.controls.editors.vm
 
 import android.content.Context
 import androidx.compose.ui.geometry.Offset

@@ -8,6 +8,7 @@ import com.app.ralaunch.feature.patch.data.PatchManager
 import com.app.ralaunch.core.di.contract.GameRepositoryV2
 import org.koin.java.KoinJavaComponent
 import com.app.ralaunch.core.common.util.AppLogger
+import com.app.ralaunch.feature.game.ui.legacy.GameActivity
 import java.io.BufferedReader
 import java.io.File
 import java.io.InputStreamReader

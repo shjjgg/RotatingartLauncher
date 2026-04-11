@@ -1,4 +1,4 @@
-package com.app.ralaunch.feature.game.legacy
+package com.app.ralaunch.feature.game.ui.legacy
 
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -23,7 +23,9 @@ import com.app.ralaunch.R
 import com.app.ralaunch.feature.game.input.GameImeHelper
 import com.app.ralaunch.feature.game.input.GameTouchBridge
 import com.app.ralaunch.feature.game.GameVirtualControlsManager
-import com.app.ralaunch.feature.crash.CrashReportActivity
+import com.app.ralaunch.feature.crash.ui.CrashReportActivity
+import com.app.ralaunch.feature.game.legacy.GameContract
+import com.app.ralaunch.feature.game.legacy.GamePresenter
 import com.app.ralaunch.core.common.SettingsAccess
 import com.app.ralaunch.core.common.GameFullscreenManager
 import com.app.ralaunch.core.common.util.AppLogger

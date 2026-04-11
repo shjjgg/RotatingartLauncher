@@ -1,4 +1,4 @@
-package com.app.ralaunch.feature.main.screens
+package com.app.ralaunch.feature.settings.ui
 
 import android.app.Activity
 import android.widget.Toast
@@ -104,17 +104,17 @@ import com.app.ralaunch.core.model.FpsLimit
 import com.app.ralaunch.core.model.QualityLevel
 import com.app.ralaunch.core.model.ThemeMode
 import com.app.ralaunch.core.theme.AppThemeState
-import com.app.ralaunch.feature.settings.ClickableSettingItem
-import com.app.ralaunch.feature.settings.SettingsCategory
-import com.app.ralaunch.feature.settings.SettingsDivider
-import com.app.ralaunch.feature.settings.SettingsEffect
-import com.app.ralaunch.feature.settings.SettingsEvent
-import com.app.ralaunch.feature.settings.SettingsScreenContent
-import com.app.ralaunch.feature.settings.SettingsSection
-import com.app.ralaunch.feature.settings.SettingsUiState
-import com.app.ralaunch.feature.settings.SettingsViewModel
-import com.app.ralaunch.feature.settings.SliderSettingItem
-import com.app.ralaunch.feature.settings.SwitchSettingItem
+import com.app.ralaunch.feature.settings.ui.ClickableSettingItem
+import com.app.ralaunch.feature.settings.ui.SettingsCategory
+import com.app.ralaunch.feature.settings.ui.SettingsDivider
+import com.app.ralaunch.feature.settings.ui.SettingsScreenContent
+import com.app.ralaunch.feature.settings.ui.SettingsSection
+import com.app.ralaunch.feature.settings.ui.SliderSettingItem
+import com.app.ralaunch.feature.settings.ui.SwitchSettingItem
+import com.app.ralaunch.feature.settings.vm.SettingsEffect
+import com.app.ralaunch.feature.settings.vm.SettingsEvent
+import com.app.ralaunch.feature.settings.vm.SettingsUiState
+import com.app.ralaunch.feature.settings.vm.SettingsViewModel
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 import java.util.Locale

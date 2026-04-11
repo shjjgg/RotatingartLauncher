@@ -1,4 +1,4 @@
-package com.app.ralaunch.feature.controls.packs.ui
+package com.app.ralaunch.feature.controls.packs.vm
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.app.ralaunch.R
 import com.app.ralaunch.feature.controls.packs.*
+import com.app.ralaunch.feature.controls.packs.ui.ControlPackUiState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

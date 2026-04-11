@@ -30,8 +30,8 @@ import com.app.ralaunch.feature.controls.packs.ControlLayout
 import com.app.ralaunch.feature.controls.packs.ControlPackManager
 import com.app.ralaunch.feature.controls.textures.TextureConfig
 import com.app.ralaunch.feature.controls.textures.TextureLoader
-import com.app.ralaunch.feature.controls.views.ControlLayout as ControlLayoutView
-import com.app.ralaunch.feature.controls.views.GridOverlayView
+import com.app.ralaunch.feature.controls.ui.ControlLayout as ControlLayoutView
+import com.app.ralaunch.feature.controls.ui.GridOverlayView
 import com.app.ralaunch.core.common.SettingsAccess
 import com.app.ralaunch.core.platform.network.easytier.EasyTierConnectionState
 import com.app.ralaunch.core.platform.network.easytier.EasyTierManager

@@ -1,4 +1,4 @@
-package com.app.ralaunch.feature.main.screens
+package com.app.ralaunch.feature.controls.ui
 
 import android.net.Uri
 import android.widget.Toast

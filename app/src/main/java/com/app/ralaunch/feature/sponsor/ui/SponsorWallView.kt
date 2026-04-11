@@ -1,4 +1,4 @@
-package com.app.ralaunch.feature.sponsor
+package com.app.ralaunch.feature.sponsor.ui
 
 import android.animation.ValueAnimator
 import android.content.Context
@@ -16,6 +16,8 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
 import com.app.ralaunch.R
+import com.app.ralaunch.feature.sponsor.Sponsor
+import com.app.ralaunch.feature.sponsor.SponsorTier
 import kotlin.math.*
 
 /**

@@ -20,8 +20,8 @@ import com.app.ralaunch.feature.controls.packs.ControlPackManager
 import com.app.ralaunch.feature.main.update.LauncherUpdateChecker
 import com.app.ralaunch.feature.patch.data.PatchManager
 import com.app.ralaunch.feature.script.JavaScriptExecutor
-import com.app.ralaunch.feature.settings.AppInfo
-import com.app.ralaunch.feature.settings.SettingsViewModel
+import com.app.ralaunch.feature.settings.vm.AppInfo
+import com.app.ralaunch.feature.settings.vm.SettingsViewModel
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.bind

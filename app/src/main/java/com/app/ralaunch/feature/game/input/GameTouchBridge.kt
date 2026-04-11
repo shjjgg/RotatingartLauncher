@@ -3,7 +3,7 @@ package com.app.ralaunch.feature.game.input
 import android.content.res.Resources
 import android.view.MotionEvent
 import com.app.ralaunch.feature.controls.TouchPointerTracker
-import com.app.ralaunch.feature.game.legacy.GameActivity
+import com.app.ralaunch.feature.game.ui.legacy.GameActivity
 import com.app.ralaunch.core.common.util.AppLogger
 
 /**
