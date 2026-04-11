@@ -6,11 +6,10 @@ import android.os.Build
 import android.os.LocaleList
 import com.app.ralaunch.R
 import com.app.ralaunch.RaLaunchApp
-import com.app.ralaunch.shared.core.contract.repository.SettingsRepositoryV2
-import com.app.ralaunch.shared.core.platform.AppConstants
-import com.app.ralaunch.shared.core.util.LocaleHelper
-import com.app.ralaunch.shared.core.util.LocaleManager as ILocaleManager
-import com.app.ralaunch.shared.core.util.SupportedLanguage
+import com.app.ralaunch.core.di.contract.SettingsRepositoryV2
+import com.app.ralaunch.core.platform.AppConstants
+import com.app.ralaunch.core.common.util.LocaleHelper
+import com.app.ralaunch.core.common.util.SupportedLanguage
 import kotlinx.coroutines.runBlocking
 import org.koin.java.KoinJavaComponent
 import org.json.JSONObject
@@ -21,11 +20,11 @@ import java.util.Locale
  * 多语言管理器 - Android 实现
  * 支持中文、英文等多种语言的动态切换
  *
- * 实现 shared 模块的 LocaleManager 接口
+ * 实现核心层的语言管理契约
  */
-object LocaleManager : ILocaleManager {
+object LocaleManager : AppLocaleManager {
 
-    // 使用 shared 模块的常量
+    // 使用核心层的常量
     const val LANGUAGE_AUTO = LocaleHelper.LANGUAGE_AUTO
     const val LANGUAGE_ZH = LocaleHelper.LANGUAGE_ZH
     const val LANGUAGE_EN = LocaleHelper.LANGUAGE_EN

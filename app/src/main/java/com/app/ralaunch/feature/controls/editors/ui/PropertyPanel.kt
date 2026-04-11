@@ -618,7 +618,7 @@ fun ColorPickerRow(
     }
     
     if (showColorPicker) {
-        com.app.ralaunch.shared.core.component.dialogs.ColorPickerDialog(
+        com.app.ralaunch.core.ui.dialog.ColorPickerDialog(
             currentColor = color.toArgb(),
             onSelect = { selectedColor ->
                 onColorSelected(Color(selectedColor))

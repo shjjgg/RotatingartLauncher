@@ -19,8 +19,6 @@ commonsCompress = "1.24.0"
 xz = "1.9"
 androidSvg = "1.4"
 recyclerview = "1.3.2"
-# Compose Multiplatform
-composeMultiplatform = "1.7.1"
 # Android Compose
 composeBom = "2025.01.01"
 composeCompiler = "1.5.15"
@@ -93,7 +91,3 @@ android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-plugin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
-android-library = { id = "com.android.library", version.ref = "agp" }
-# KMP
-kmp = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
-composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }

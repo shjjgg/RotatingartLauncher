@@ -2,8 +2,8 @@ package com.app.ralaunch.feature.patch.data
 
 import android.content.Context
 import android.util.Log
-import com.app.ralaunch.core.platform.install.extractors.BasicSevenZipExtractor
-import com.app.ralaunch.core.platform.install.extractors.ExtractorCollection
+import com.app.ralaunch.core.extractor.BasicSevenZipExtractor
+import com.app.ralaunch.core.extractor.ExtractorCollection
 import com.app.ralaunch.core.common.util.FileUtils
 import com.app.ralaunch.core.common.util.TemporaryFileAcquirer
 import org.koin.java.KoinJavaComponent

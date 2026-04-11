@@ -26,7 +26,6 @@ import com.app.ralaunch.feature.controls.packs.ControlLayout
 import com.app.ralaunch.feature.controls.views.ControlLayout as ControlLayoutView
 import com.app.ralaunch.feature.controls.views.GridOverlayView
 import com.app.ralaunch.feature.controls.bridges.DummyInputBridge
-import com.app.ralaunch.core.ui.dialog.KeyBindingDialog
 import kotlin.math.roundToInt
 
 @Composable

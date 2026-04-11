@@ -22,7 +22,7 @@ import org.koin.java.KoinJavaComponent
 import com.app.ralaunch.core.platform.runtime.dotnet.DotNetLauncher
 import com.app.ralaunch.core.common.util.AppLogger
 import com.app.ralaunch.core.common.util.NativeMethods
-import com.app.ralaunch.core.platform.runtime.renderer.RendererEnvironmentConfigurator
+import com.app.ralaunch.core.platform.runtime.RendererEnvironmentConfigurator
 import com.app.ralaunch.feature.patch.data.Patch
 import com.app.ralaunch.feature.patch.data.PatchManager
 import com.app.ralaunch.core.platform.android.ProcessLauncherService

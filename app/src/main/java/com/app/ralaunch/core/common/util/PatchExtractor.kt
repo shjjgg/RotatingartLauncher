@@ -2,7 +2,7 @@ package com.app.ralaunch.core.common.util
 
 import android.content.Context
 import com.app.ralaunch.core.platform.runtime.AssemblyPatcher
-import com.app.ralaunch.shared.core.contract.repository.GameRepositoryV2
+import com.app.ralaunch.core.di.contract.GameRepositoryV2
 import org.koin.java.KoinJavaComponent
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream
 import java.io.BufferedInputStream

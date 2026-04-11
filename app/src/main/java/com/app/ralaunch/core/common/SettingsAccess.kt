@@ -1,11 +1,11 @@
 package com.app.ralaunch.core.common
 
-import com.app.ralaunch.shared.core.model.domain.BackgroundType
-import com.app.ralaunch.shared.core.model.domain.AppSettings
-import com.app.ralaunch.shared.core.model.domain.KeyboardType
-import com.app.ralaunch.shared.core.model.domain.ThemeMode
-import com.app.ralaunch.shared.core.contract.repository.SettingsRepositoryV2
-import com.app.ralaunch.shared.core.platform.runtime.renderer.RendererRegistry
+import com.app.ralaunch.core.model.BackgroundType
+import com.app.ralaunch.core.model.AppSettings
+import com.app.ralaunch.core.model.KeyboardType
+import com.app.ralaunch.core.model.ThemeMode
+import com.app.ralaunch.core.di.contract.SettingsRepositoryV2
+import com.app.ralaunch.core.platform.runtime.RendererRegistry
 import kotlinx.coroutines.runBlocking
 import org.koin.java.KoinJavaComponent
 

@@ -1,7 +1,7 @@
 package com.app.ralaunch.core.common.util
 
 import android.content.Context
-import com.app.ralaunch.shared.core.platform.AppConstants
+import com.app.ralaunch.core.platform.AppConstants
 import java.io.File
 
 internal object LogExportHelper {
