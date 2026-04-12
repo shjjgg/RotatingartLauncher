@@ -7,7 +7,7 @@ import java.io.File
 /**
  * 存储路径提供器。
  */
-class StoragePathsProvider(
+class StoragePathsProviderServiceV1(
     private val context: Context
 ) {
     fun gamesDirPathFull(): String {

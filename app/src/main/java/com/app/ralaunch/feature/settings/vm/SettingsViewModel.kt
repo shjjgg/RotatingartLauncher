@@ -7,7 +7,7 @@ import com.app.ralaunch.core.model.BackgroundType
 import com.app.ralaunch.core.model.FpsLimit
 import com.app.ralaunch.core.model.QualityLevel
 import com.app.ralaunch.core.model.ThemeMode
-import com.app.ralaunch.core.di.contract.SettingsRepositoryV2
+import com.app.ralaunch.core.di.contract.ISettingsRepositoryServiceV2
 import com.app.ralaunch.core.common.util.getAppString
 import com.app.ralaunch.R
 import com.app.ralaunch.feature.settings.ui.SettingsCategory
@@ -132,7 +132,7 @@ sealed class SettingsEffect {
  * 设置 ViewModel - 跨平台
  */
 class SettingsViewModel(
-    private val settingsRepository: SettingsRepositoryV2,
+    private val settingsRepository: ISettingsRepositoryServiceV2,
     private val appInfo: AppInfo = AppInfo()
 ) : ViewModel() {
 

@@ -7,13 +7,14 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.core.content.FileProvider
 import com.app.ralaunch.R
+import com.app.ralaunch.core.common.util.FileUtils
 import com.app.ralaunch.feature.patch.data.PatchManager
 import com.app.ralaunch.core.platform.runtime.AndroidRendererRegistry
 import com.app.ralaunch.core.common.util.LogExportHelper
 import com.app.ralaunch.core.platform.android.provider.RaLaunchFileProvider
 import com.app.ralaunch.core.ui.dialog.RendererOption
 import com.app.ralaunch.core.model.BackgroundType
-import com.app.ralaunch.core.di.contract.SettingsRepositoryV2
+import com.app.ralaunch.core.di.contract.ISettingsRepositoryServiceV2
 import com.app.ralaunch.core.platform.AppConstants
 import com.app.ralaunch.feature.settings.vm.SettingsEvent
 import com.app.ralaunch.feature.settings.vm.SettingsViewModel
@@ -44,14 +45,14 @@ internal suspend fun handleImageSelection(context: Context, uri: Uri, viewModel:
                 }
             }
             
-            val settingsRepository: SettingsRepositoryV2 =
-                KoinJavaComponent.get(SettingsRepositoryV2::class.java)
+            val settingsRepository: ISettingsRepositoryServiceV2 =
+                KoinJavaComponent.get(ISettingsRepositoryServiceV2::class.java)
 
             val oldPath = settingsRepository.getSettingsSnapshot().backgroundImagePath
             if (!oldPath.isNullOrEmpty()) {
                 val oldFile = File(oldPath)
-                if (oldFile.exists() && oldFile.parentFile == backgroundDir) {
-                    oldFile.delete()
+                if (oldFile.exists()) {
+                    FileUtils.deleteFileWithinRoot(oldFile, backgroundDir)
                 }
             }
 
@@ -95,8 +96,8 @@ internal suspend fun handleVideoSelection(context: Context, uri: Uri, viewModel:
             }
 
             val newPath = destFile.absolutePath
-            val settingsRepository: SettingsRepositoryV2 =
-                KoinJavaComponent.get(SettingsRepositoryV2::class.java)
+            val settingsRepository: ISettingsRepositoryServiceV2 =
+                KoinJavaComponent.get(ISettingsRepositoryServiceV2::class.java)
 
             settingsRepository.update {
                 backgroundVideoPath = newPath
@@ -229,8 +230,8 @@ internal fun buildLogFileName(): String {
 
 internal fun clearAppCache(context: Context) {
     try {
-        context.cacheDir.deleteRecursively()
-        context.externalCacheDir?.deleteRecursively()
+        FileUtils.clearDirectory(context.cacheDir)
+        context.externalCacheDir?.let(FileUtils::clearDirectory)
         Toast.makeText(context, context.getString(R.string.settings_cache_cleared), Toast.LENGTH_SHORT).show()
     } catch (e: Exception) {
         Toast.makeText(context, context.getString(R.string.settings_clear_cache_failed), Toast.LENGTH_SHORT).show()
@@ -266,7 +267,8 @@ internal fun applyVideoSpeedChange(speed: Float) {
 }
 
 internal fun restoreDefaultBackground(context: Context) {
-    val settingsRepository: SettingsRepositoryV2 = KoinJavaComponent.get(SettingsRepositoryV2::class.java)
+    val settingsRepository: ISettingsRepositoryServiceV2 =
+        KoinJavaComponent.get(ISettingsRepositoryServiceV2::class.java)
     kotlinx.coroutines.runBlocking {
         settingsRepository.update {
             backgroundType = BackgroundType.DEFAULT
@@ -280,7 +282,8 @@ internal fun restoreDefaultBackground(context: Context) {
 }
 
 internal fun applyThemeColor(context: Context, colorId: Int) {
-    val settingsRepository: SettingsRepositoryV2 = KoinJavaComponent.get(SettingsRepositoryV2::class.java)
+    val settingsRepository: ISettingsRepositoryServiceV2 =
+        KoinJavaComponent.get(ISettingsRepositoryServiceV2::class.java)
     kotlinx.coroutines.runBlocking {
         settingsRepository.update {
             themeColor = colorId

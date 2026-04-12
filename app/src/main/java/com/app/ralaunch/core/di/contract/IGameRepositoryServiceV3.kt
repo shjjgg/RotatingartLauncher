@@ -4,11 +4,11 @@ import com.app.ralaunch.core.model.GameItem
 import kotlinx.coroutines.flow.StateFlow
 
 /**
- * 游戏数据仓库 V2
+ * 游戏数据仓库 V3
  *
- * 以 StateFlow 作为单一数据源，读写接口保持最小集合。
+ * 统一负责游戏列表持久化、存储目录分配与游戏文件删除。
  */
-interface GameRepositoryV2 {
+interface IGameRepositoryServiceV3 {
     val games: StateFlow<List<GameItem>>
 
     suspend fun getById(id: String): GameItem?
@@ -18,4 +18,8 @@ interface GameRepositoryV2 {
     suspend fun reorder(from: Int, to: Int)
     suspend fun replaceAll(games: List<GameItem>)
     suspend fun clear()
+
+    fun getGameGlobalStorageDirFull(): String
+    fun createGameStorageRoot(gameId: String): Pair<String, String>
+    fun deleteGameFiles(game: GameItem): Boolean
 }

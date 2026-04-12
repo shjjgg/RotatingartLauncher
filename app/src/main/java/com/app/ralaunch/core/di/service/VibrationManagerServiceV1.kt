@@ -6,19 +6,19 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import com.app.ralaunch.core.common.SettingsAccess
-import com.app.ralaunch.core.di.contract.IVibrationManager
+import com.app.ralaunch.core.di.contract.IVibrationManagerServiceV1
 import com.app.ralaunch.core.di.contract.VibrationType
 
 /**
  * 振动管理器 - Android 实现
  * 提供统一的振动反馈接口
  * 
- * 实现核心层的 IVibrationManager 接口
+ * 实现核心层的 IVibrationManagerServiceV1 接口
  */
-class VibrationManager(context: Context) : IVibrationManager {
+class VibrationManagerServiceV1(context: Context) : IVibrationManagerServiceV1 {
 
     companion object {
-        const val TAG = "VibrationManager"
+        const val TAG = "VibrationManagerServiceV1"
     }
 
     private val vibrator: Vibrator? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -33,7 +33,7 @@ class VibrationManager(context: Context) : IVibrationManager {
     private val isVibrationEnabled: Boolean
         get() = vibrator?.hasVibrator() == true && settingsManager.vibrationEnabled
 
-    // ==================== IVibrationManager 接口实现 ====================
+    // ==================== IVibrationManagerServiceV1 接口实现 ====================
 
     override fun isSupported(): Boolean = vibrator?.hasVibrator() == true
 

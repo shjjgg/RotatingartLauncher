@@ -6,10 +6,8 @@ import android.os.Build
 import android.os.LocaleList
 import com.app.ralaunch.R
 import com.app.ralaunch.RaLaunchApp
-import com.app.ralaunch.core.di.contract.SettingsRepositoryV2
+import com.app.ralaunch.core.di.contract.ISettingsRepositoryServiceV2
 import com.app.ralaunch.core.platform.AppConstants
-import com.app.ralaunch.core.common.util.LocaleHelper
-import com.app.ralaunch.core.common.util.SupportedLanguage
 import kotlinx.coroutines.runBlocking
 import org.koin.java.KoinJavaComponent
 import org.json.JSONObject
@@ -138,7 +136,7 @@ object LocaleManager : AppLocaleManager {
 
     private fun readLanguageFromRepository(context: Context? = null): String {
         val languageFromRepository = runCatching {
-            KoinJavaComponent.get<SettingsRepositoryV2>(SettingsRepositoryV2::class.java).Settings.language
+            KoinJavaComponent.get<ISettingsRepositoryServiceV2>(ISettingsRepositoryServiceV2::class.java).Settings.language
         }.getOrNull()
 
         val language = languageFromRepository
@@ -181,7 +179,7 @@ object LocaleManager : AppLocaleManager {
 
     private fun persistLanguage(language: String) {
         runCatching {
-            val repository = KoinJavaComponent.get<SettingsRepositoryV2>(SettingsRepositoryV2::class.java)
+            val repository = KoinJavaComponent.get<ISettingsRepositoryServiceV2>(ISettingsRepositoryServiceV2::class.java)
             runBlocking {
                 repository.update { this.language = normalizeLanguageCode(language) }
             }

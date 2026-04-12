@@ -1,6 +1,6 @@
 package com.app.ralaunch.core.di.service
 
-import com.app.ralaunch.core.di.contract.SettingsRepositoryV2
+import com.app.ralaunch.core.di.contract.ISettingsRepositoryServiceV2
 import com.app.ralaunch.core.model.AppSettings
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -8,7 +8,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlin.io.path.Path
 import kotlin.io.path.createDirectories
@@ -23,9 +22,9 @@ import kotlin.io.path.writeText
  *
  * 单一持久化来源：JSON 文件（settings.json）。
  */
-class SettingsRepositoryImpl(
-    private val storagePathsProvider: StoragePathsProvider
-) : SettingsRepositoryV2 {
+class SettingsRepositoryServiceV2(
+    private val storagePathsProvider: StoragePathsProviderServiceV1
+) : ISettingsRepositoryServiceV2 {
 
     private val writeMutex = Mutex()
     private val json = Json {

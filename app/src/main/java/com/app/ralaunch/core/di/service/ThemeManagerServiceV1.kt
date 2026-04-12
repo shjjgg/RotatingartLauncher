@@ -12,7 +12,7 @@ import com.app.ralaunch.core.common.DynamicColorManager
 import com.app.ralaunch.core.common.SettingsAccess
 import com.app.ralaunch.core.common.util.AppLogger
 import com.app.ralaunch.core.config.ThemeConfig
-import com.app.ralaunch.core.di.contract.IThemeManager
+import com.app.ralaunch.core.di.contract.IThemeManagerServiceV1
 import com.app.ralaunch.core.model.BackgroundType
 import com.app.ralaunch.core.model.ThemeMode
 
@@ -20,12 +20,12 @@ import com.app.ralaunch.core.model.ThemeMode
  * 主题管理器 - Android 实现
  * 负责管理主题应用（主题模式、背景设置、动态颜色等）
  * 
- * 实现核心层的 IThemeManager 接口
+ * 实现核心层的 IThemeManagerServiceV1 接口
  */
-class ThemeManager(private val activity: AppCompatActivity) : IThemeManager {
+class ThemeManagerServiceV1(private val activity: AppCompatActivity) : IThemeManagerServiceV1 {
 
     companion object {
-        private const val TAG = "ThemeManager"
+        private const val TAG = "ThemeManagerServiceV1"
     }
 
     private val settingsManager: SettingsAccess = SettingsAccess
@@ -159,7 +159,7 @@ class ThemeManager(private val activity: AppCompatActivity) : IThemeManager {
         }, 50)
     }
 
-    // ==================== IThemeManager 接口实现 ====================
+    // ==================== IThemeManagerServiceV1 接口实现 ====================
 
     override fun getThemeConfig(): ThemeConfig {
         return ThemeConfig(

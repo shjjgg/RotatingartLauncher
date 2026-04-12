@@ -17,7 +17,7 @@ enum class VibrationType {
 /**
  * 震动管理接口 - 跨平台
  */
-interface IVibrationManager {
+interface IVibrationManagerServiceV1 {
     /**
      * 是否支持震动
      */

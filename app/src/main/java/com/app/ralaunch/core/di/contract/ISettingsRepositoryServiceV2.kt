@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.StateFlow
  *
  * 以 AppSettings 快照作为统一读写入口。
  */
-interface SettingsRepositoryV2 {
+interface ISettingsRepositoryServiceV2 {
     val settings: StateFlow<AppSettings>
     @Suppress("PropertyName")
     val Settings: AppSettings

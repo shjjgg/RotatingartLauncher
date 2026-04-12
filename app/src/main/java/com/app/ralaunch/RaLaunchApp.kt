@@ -9,7 +9,7 @@ import androidx.appcompat.app.AppCompatDelegate
 import com.app.ralaunch.feature.controls.packs.ControlPackManager
 import com.app.ralaunch.core.common.SettingsAccess
 import com.app.ralaunch.core.di.KoinInitializer
-import com.app.ralaunch.core.di.service.VibrationManager
+import com.app.ralaunch.core.di.service.VibrationManagerServiceV1
 import com.app.ralaunch.core.common.util.DensityAdapter
 import com.app.ralaunch.core.common.util.LocaleManager
 import com.app.ralaunch.core.model.ThemeMode
@@ -47,7 +47,7 @@ class RaLaunchApp : Application(), KoinComponent {
     }
 
     // 延迟注入（在 Koin 初始化后才能使用）
-    private val _vibrationManager: VibrationManager by inject()
+    private val _vibrationManager: VibrationManagerServiceV1 by inject()
     private val _controlPackManager: ControlPackManager by inject()
     private val _patchManager: PatchManager? by inject()
 
@@ -144,9 +144,9 @@ class RaLaunchApp : Application(), KoinComponent {
     // ==================== 兼容旧代码的访问方法 ====================
 
     /**
-     * 获取 VibrationManager
+     * 获取 VibrationManagerServiceV1
      */
-    fun getVibrationManager(): VibrationManager = _vibrationManager
+    fun getVibrationManager(): VibrationManagerServiceV1 = _vibrationManager
 
     /**
      * 获取 ControlPackManager

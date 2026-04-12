@@ -19,7 +19,6 @@ import com.app.ralaunch.core.common.util.FileUtils
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.IOException
-import java.nio.file.Paths
 
 /**
  * RaLaunch 文档提供器
@@ -182,7 +181,7 @@ class RaLaunchDocumentsProvider : DocumentsProvider() {
         }
 
         // 使用 ralib 的 FileUtils 删除目录
-        val success = FileUtils.deleteDirectoryRecursively(Paths.get(file.absolutePath))
+        val success = FileUtils.deleteDirectoryRecursively(file.toPath())
         if (!success) {
             throw FileNotFoundException("Failed to delete document $documentId")
         }

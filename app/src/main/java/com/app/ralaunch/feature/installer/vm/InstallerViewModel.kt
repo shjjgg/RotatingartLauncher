@@ -4,8 +4,7 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.app.ralaunch.R
-import com.app.ralaunch.core.di.contract.GameListStorage
-import com.app.ralaunch.core.di.contract.GameRepositoryV2
+import com.app.ralaunch.core.di.contract.IGameRepositoryServiceV3
 import com.app.ralaunch.core.model.GameItem
 import com.app.ralaunch.feature.installer.GameInstaller
 import com.app.ralaunch.feature.installer.InstallCallback
@@ -28,8 +27,7 @@ import kotlinx.coroutines.withContext
 
 class InstallerViewModel(
     private val appContext: Context,
-    private val gameRepository: GameRepositoryV2,
-    private val gameListStorage: GameListStorage
+    private val gameRepository: IGameRepositoryServiceV3
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(InstallerUiState())
@@ -182,7 +180,7 @@ class InstallerViewModel(
             )
         }
 
-        val installer = GameInstaller(gameListStorage)
+        val installer = GameInstaller(gameRepository)
         activeInstaller = installer
 
         installer.install(

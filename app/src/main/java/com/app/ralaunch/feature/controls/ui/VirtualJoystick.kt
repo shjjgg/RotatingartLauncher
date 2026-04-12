@@ -11,7 +11,7 @@ import android.os.Looper
 import android.util.Log
 import android.view.MotionEvent
 import android.view.View
-import com.app.ralaunch.core.di.service.VibrationManager
+import com.app.ralaunch.core.di.service.VibrationManagerServiceV1
 import com.app.ralaunch.feature.controls.ControlData
 import org.koin.java.KoinJavaComponent
 import com.app.ralaunch.feature.controls.bridges.ControlInputBridge
@@ -112,12 +112,12 @@ class VirtualJoystick(
         )
     }
 
-    // 使用 Koin 延迟获取 VibrationManager
-    private val vibrationManager: VibrationManager? by lazy {
+    // 使用 Koin 延迟获取 VibrationManagerServiceV1
+    private val vibrationManager: VibrationManagerServiceV1? by lazy {
         try {
-            KoinJavaComponent.get(VibrationManager::class.java)
+            KoinJavaComponent.get(VibrationManagerServiceV1::class.java)
         } catch (e: Exception) {
-            Log.w(TAG, "VibrationManager not available: ${e.message}")
+            Log.w(TAG, "VibrationManagerServiceV1 not available: ${e.message}")
             null
         }
     }

@@ -15,7 +15,7 @@ import androidx.core.content.ContextCompat
 /**
  * 权限管理器
  */
-class PermissionManager(private val activity: ComponentActivity) {
+class PermissionManagerServiceV1(private val activity: ComponentActivity) {
 
     private var manageAllFilesLauncher: ActivityResultLauncher<Intent>? = null
     private var requestPermissionLauncher: ActivityResultLauncher<Array<String>>? = null

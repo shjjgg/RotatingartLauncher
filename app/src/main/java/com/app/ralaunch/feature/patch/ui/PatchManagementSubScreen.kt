@@ -30,7 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.app.ralaunch.R
-import com.app.ralaunch.core.di.contract.GameRepositoryV2
+import com.app.ralaunch.core.di.contract.IGameRepositoryServiceV3
 import com.app.ralaunch.core.model.GameItem
 import com.app.ralaunch.feature.patch.data.Patch
 import com.app.ralaunch.feature.patch.data.PatchManager
@@ -57,8 +57,8 @@ fun PatchManagementSubScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     
-    val gameRepository: GameRepositoryV2? = remember {
-        try { KoinJavaComponent.getOrNull(GameRepositoryV2::class.java) } catch (_: Exception) { null }
+    val gameRepository: IGameRepositoryServiceV3? = remember {
+        try { KoinJavaComponent.getOrNull(IGameRepositoryServiceV3::class.java) } catch (_: Exception) { null }
     }
     val patchManager: PatchManager? = remember {
         try { KoinJavaComponent.getOrNull(PatchManager::class.java) } catch (_: Exception) { null }

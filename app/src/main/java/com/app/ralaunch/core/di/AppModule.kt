@@ -3,19 +3,15 @@ package com.app.ralaunch.core.di
 import androidx.activity.ComponentActivity
 import androidx.appcompat.app.AppCompatActivity
 import com.app.ralaunch.core.common.GameLaunchManager
-import com.app.ralaunch.core.di.contract.GameListStorage
-import com.app.ralaunch.core.di.contract.GameRepositoryV2
-import com.app.ralaunch.core.di.contract.IThemeManager
-import com.app.ralaunch.core.di.contract.IVibrationManager
-import com.app.ralaunch.core.di.contract.SettingsRepositoryV2
-import com.app.ralaunch.core.di.service.AndroidGameListStorage
-import com.app.ralaunch.core.di.service.GameDeletionManager
-import com.app.ralaunch.core.di.service.GameRepositoryImpl
-import com.app.ralaunch.core.di.service.PermissionManager
-import com.app.ralaunch.core.di.service.SettingsRepositoryImpl
-import com.app.ralaunch.core.di.service.StoragePathsProvider
-import com.app.ralaunch.core.di.service.ThemeManager
-import com.app.ralaunch.core.di.service.VibrationManager
+import com.app.ralaunch.core.di.contract.IGameRepositoryServiceV3
+import com.app.ralaunch.core.di.contract.ISettingsRepositoryServiceV2
+import com.app.ralaunch.core.di.contract.IThemeManagerServiceV1
+import com.app.ralaunch.core.di.service.GameRepositoryServiceV3
+import com.app.ralaunch.core.di.service.PermissionManagerServiceV1
+import com.app.ralaunch.core.di.service.SettingsRepositoryServiceV2
+import com.app.ralaunch.core.di.service.StoragePathsProviderServiceV1
+import com.app.ralaunch.core.di.service.ThemeManagerServiceV1
+import com.app.ralaunch.core.di.service.VibrationManagerServiceV1
 import com.app.ralaunch.feature.announcement.AnnouncementRepositoryService
 import com.app.ralaunch.feature.controls.packs.ControlPackManager
 import com.app.ralaunch.feature.installer.vm.InstallerViewModel
@@ -27,7 +23,6 @@ import com.app.ralaunch.feature.settings.vm.AppInfo
 import com.app.ralaunch.feature.settings.vm.SettingsViewModel
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModel
-import org.koin.dsl.bind
 import org.koin.dsl.module
 
 /**
@@ -39,22 +34,18 @@ val appModule = module {
 
     // ==================== 数据存储 ====================
 
-    single<StoragePathsProvider> {
-        StoragePathsProvider(androidContext())
-    }
-
-    single<GameListStorage> {
-        AndroidGameListStorage(get())
+    single<StoragePathsProviderServiceV1> {
+        StoragePathsProviderServiceV1(androidContext())
     }
 
     // ==================== Repositories ====================
 
-    single<GameRepositoryV2> {
-        GameRepositoryImpl(gameListStorage = get())
+    single<IGameRepositoryServiceV3> {
+        GameRepositoryServiceV3(pathsProvider = get())
     }
 
-    single<SettingsRepositoryV2> {
-        SettingsRepositoryImpl(storagePathsProvider = get())
+    single<ISettingsRepositoryServiceV2> {
+        SettingsRepositoryServiceV2(storagePathsProvider = get())
     }
 
     // ==================== App Info ====================
@@ -63,12 +54,7 @@ val appModule = module {
         try {
             val context = androidContext()
             val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-            val versionCode = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
-                packageInfo.longVersionCode
-            } else {
-                @Suppress("DEPRECATION")
-                packageInfo.versionCode.toLong()
-            }
+            val versionCode = packageInfo.longVersionCode
             AppInfo(
                 versionName = packageInfo.versionName ?: versionCode.toString(),
                 versionCode = versionCode
@@ -81,8 +67,8 @@ val appModule = module {
     // ==================== Managers ====================
 
     single {
-        VibrationManager(androidContext())
-    } bind IVibrationManager::class
+        VibrationManagerServiceV1(androidContext())
+    }
 
     single {
         ControlPackManager(androidContext())
@@ -101,10 +87,6 @@ val appModule = module {
     }
 
     single {
-        GameDeletionManager(androidContext())
-    }
-
-    single {
         JavaScriptExecutor()
     }
 
@@ -120,7 +102,7 @@ val appModule = module {
 
     viewModel {
         SettingsViewModel(
-            settingsRepository = get<SettingsRepositoryV2>(),
+            settingsRepository = get<ISettingsRepositoryServiceV2>(),
             appInfo = getOrNull<AppInfo>() ?: AppInfo()
         )
     }
@@ -130,8 +112,7 @@ val appModule = module {
             appContext = androidContext(),
             gameRepository = get(),
             gameLaunchManager = get(),
-            gameDeletionManager = get(),
-            settingsRepository = get<SettingsRepositoryV2>(),
+            settingsRepository = get(),
             announcementRepositoryService = get(),
             launcherUpdateChecker = get()
         )
@@ -140,23 +121,22 @@ val appModule = module {
     viewModel {
         InstallerViewModel(
             appContext = androidContext(),
-            gameRepository = get(),
-            gameListStorage = get()
+            gameRepository = get()
         )
     }
 
     // ==================== UI Managers (参数化工厂) ====================
 
-    factory<ThemeManager> { (activity: AppCompatActivity) ->
-        ThemeManager(activity)
+    factory<ThemeManagerServiceV1> { (activity: AppCompatActivity) ->
+        ThemeManagerServiceV1(activity)
     }
 
-    factory<IThemeManager> { (activity: AppCompatActivity) ->
-        ThemeManager(activity)
+    factory<IThemeManagerServiceV1> { (activity: AppCompatActivity) ->
+        ThemeManagerServiceV1(activity)
     }
 
-    factory<PermissionManager> { (activity: ComponentActivity) ->
-        PermissionManager(activity)
+    factory<PermissionManagerServiceV1> { (activity: ComponentActivity) ->
+        PermissionManagerServiceV1(activity)
     }
 }
 

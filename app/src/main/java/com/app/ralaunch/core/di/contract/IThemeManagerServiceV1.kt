@@ -7,7 +7,7 @@ import com.app.ralaunch.core.model.ThemeMode
 /**
  * 主题管理接口 - 跨平台
  */
-interface IThemeManager {
+interface IThemeManagerServiceV1 {
     /**
      * 获取当前主题配置
      */

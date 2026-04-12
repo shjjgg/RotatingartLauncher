@@ -21,7 +21,7 @@ import com.app.ralaunch.feature.controls.bridges.ControlInputBridge
 import com.app.ralaunch.feature.controls.ControlData
 import com.app.ralaunch.feature.controls.ControlSpecialActionHandler
 import com.app.ralaunch.feature.controls.textures.TextureLoader
-import com.app.ralaunch.core.di.service.VibrationManager
+import com.app.ralaunch.core.di.service.VibrationManagerServiceV1
 import org.koin.java.KoinJavaComponent
 import java.io.File
 import kotlin.math.atan2
@@ -46,11 +46,11 @@ class VirtualRadialMenu(
     }
 
     // 震动管理器
-    private val vibrationManager: VibrationManager? by lazy {
+    private val vibrationManager: VibrationManagerServiceV1? by lazy {
         try {
-            KoinJavaComponent.get(VibrationManager::class.java)
+            KoinJavaComponent.get(VibrationManagerServiceV1::class.java)
         } catch (e: Exception) {
-            Log.w(TAG, "VibrationManager not available: ${e.message}")
+            Log.w(TAG, "VibrationManagerServiceV1 not available: ${e.message}")
             null
         }
     }

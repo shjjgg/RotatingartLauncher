@@ -33,7 +33,7 @@ class TemporaryFileAcquirer : Closeable {
 
     fun cleanupTempFiles() {
         tmpFilePaths.forEach { tmpFilePath ->
-            val isSuccessful = FileUtils.deleteDirectoryRecursively(tmpFilePath)
+            val isSuccessful = FileUtils.deleteDirectoryRecursivelyWithinRoot(tmpFilePath, preferredTempDir)
             if (!isSuccessful) {
                 Log.w(TAG, "Failed to delete temporary file or directory: $tmpFilePath")
             }

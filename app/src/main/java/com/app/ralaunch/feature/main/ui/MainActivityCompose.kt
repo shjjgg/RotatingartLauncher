@@ -78,13 +78,14 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import coil.compose.AsyncImage
 import com.app.ralaunch.R
+import com.app.ralaunch.core.common.util.FileUtils
 import com.app.ralaunch.core.common.ErrorHandler
 import com.app.ralaunch.core.common.MessageHelper
 import com.app.ralaunch.core.common.SettingsAccess
 import com.app.ralaunch.core.common.util.AppLogger
 import com.app.ralaunch.core.common.util.DensityAdapter
-import com.app.ralaunch.core.di.service.PermissionManager
-import com.app.ralaunch.core.di.service.ThemeManager
+import com.app.ralaunch.core.di.service.PermissionManagerServiceV1
+import com.app.ralaunch.core.di.service.ThemeManagerServiceV1
 import com.app.ralaunch.core.navigation.NavDestination
 import com.app.ralaunch.core.navigation.NavState
 import com.app.ralaunch.core.navigation.Screen
@@ -126,6 +127,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import org.koin.compose.KoinContext
 import org.koin.compose.viewmodel.koinViewModel
 import java.io.File
 import com.app.ralaunch.core.model.BackgroundType as SettingsBackgroundType
@@ -134,8 +136,8 @@ import com.app.ralaunch.core.model.BackgroundType as SettingsBackgroundType
 class MainActivityCompose : BaseActivity() {
 
     // Managers
-    private lateinit var themeManager: ThemeManager
-    private lateinit var permissionManager: PermissionManager
+    private lateinit var themeManager: ThemeManagerServiceV1
+    private lateinit var permissionManager: PermissionManagerServiceV1
 
     private val navState = NavState()
     private var activeUpdateDownloadId: Long = -1L
@@ -163,7 +165,7 @@ class MainActivityCompose : BaseActivity() {
         
         DensityAdapter.adapt(this, true)
 
-        themeManager = ThemeManager(this)
+        themeManager = ThemeManagerServiceV1(this)
         themeManager.applyThemeFromSettings()
 
         super.onCreate(savedInstanceState)
@@ -173,19 +175,21 @@ class MainActivityCompose : BaseActivity() {
 
         initLogger()
         ErrorHandler.init(this)
-        permissionManager = PermissionManager(this).apply { initialize() }
+        permissionManager = PermissionManagerServiceV1(this).apply { initialize() }
         registerUpdateDownloadReceiver()
 
         // 设置纯 Compose UI
         setContent {
-            val themeMode by AppThemeState.themeMode.collectAsState()
-            val themeColor by AppThemeState.themeColor.collectAsState()
+            KoinContext {
+                val themeMode by AppThemeState.themeMode.collectAsState()
+                val themeColor by AppThemeState.themeColor.collectAsState()
 
-            RaLaunchTheme(
-                themeMode = themeMode,
-                themeColor = themeColor
-            ) {
-                MainScreenWrapper()
+                RaLaunchTheme(
+                    themeMode = themeMode,
+                    themeColor = themeColor
+                ) {
+                    MainScreenWrapper()
+                }
             }
         }
 
@@ -327,7 +331,7 @@ class MainActivityCompose : BaseActivity() {
             }
         }
         if (targetFile.exists()) {
-            targetFile.delete()
+            FileUtils.deleteFileWithinRoot(targetFile, targetDir)
         }
 
         val request = DownloadManager.Request(downloadUrl.toUri()).apply {
@@ -749,7 +753,7 @@ class MainActivityCompose : BaseActivity() {
                                 },
                                 onBack = { navState.goBack() },
                                 onRequestPermission = {
-                                    permissionManager.requestRequiredPermissions(object : PermissionManager.PermissionCallback {
+                                    permissionManager.requestRequiredPermissions(object : PermissionManagerServiceV1.PermissionCallback {
                                         override fun onPermissionsGranted() {
                                             hasFilePermission = true
                                         }

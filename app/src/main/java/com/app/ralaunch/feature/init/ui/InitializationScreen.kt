@@ -57,7 +57,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.app.ralaunch.R
-import com.app.ralaunch.core.di.service.PermissionManager
+import com.app.ralaunch.core.di.service.PermissionManagerServiceV1
 import com.app.ralaunch.feature.init.model.ComponentState
 import com.app.ralaunch.feature.init.model.InitUiState
 import com.app.ralaunch.core.platform.AppConstants
@@ -103,7 +103,7 @@ private fun rememberInitPalette(): InitPalette {
 
 @Composable
 fun InitializationScreen(
-    permissionManager: PermissionManager,
+    permissionManager: PermissionManagerServiceV1,
     onComplete: () -> Unit,
     onExit: () -> Unit,
     onExtract: (List<ComponentState>, (Int, Int, Boolean, String) -> Unit) -> Unit,
@@ -164,7 +164,7 @@ fun InitializationScreen(
                             prefs.edit().putBoolean(AppConstants.InitKeys.PERMISSIONS_GRANTED, true).apply()
                             uiState = uiState.copy(hasPermissions = true)
                         } else {
-                            permissionManager.requestRequiredPermissions(object : PermissionManager.PermissionCallback {
+                            permissionManager.requestRequiredPermissions(object : PermissionManagerServiceV1.PermissionCallback {
                                 override fun onPermissionsGranted() {
                                     prefs.edit().putBoolean(AppConstants.InitKeys.PERMISSIONS_GRANTED, true).apply()
                                     uiState = uiState.copy(hasPermissions = true)

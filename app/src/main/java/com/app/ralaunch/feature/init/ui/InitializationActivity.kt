@@ -15,7 +15,8 @@ import androidx.core.view.WindowInsetsControllerCompat
 import com.app.ralaunch.R
 import com.app.ralaunch.core.common.ErrorHandler
 import com.app.ralaunch.core.common.util.AppLogger
-import com.app.ralaunch.core.di.service.PermissionManager
+import com.app.ralaunch.core.common.util.FileUtils
+import com.app.ralaunch.core.di.service.PermissionManagerServiceV1
 import com.app.ralaunch.core.extractor.ArchiveExtractor
 import com.app.ralaunch.core.platform.AppConstants
 import com.app.ralaunch.core.theme.RaLaunchTheme
@@ -32,7 +33,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  */
 class InitializationActivity : ComponentActivity() {
 
-    private lateinit var permissionManager: PermissionManager
+    private lateinit var permissionManager: PermissionManagerServiceV1
     private lateinit var prefs: SharedPreferences
     
     private val executor = Executors.newSingleThreadExecutor()
@@ -53,7 +54,7 @@ class InitializationActivity : ComponentActivity() {
             return
         }
 
-        permissionManager = PermissionManager(this).apply { initialize() }
+        permissionManager = PermissionManagerServiceV1(this).apply { initialize() }
 
         setContent {
             RaLaunchTheme {
@@ -153,7 +154,7 @@ class InitializationActivity : ComponentActivity() {
                     ArchiveExtractor.extractTar(tempFile, outputDir, stripPrefix, callback)
             }
 
-            tempFile.delete()
+            FileUtils.deleteFileWithinRoot(tempFile, tempFile.parentFile)
             mainHandler.post {
                 onUpdate(index, 100, true, getString(R.string.init_complete))
             }

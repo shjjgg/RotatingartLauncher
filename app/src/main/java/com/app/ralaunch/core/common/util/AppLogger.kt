@@ -141,7 +141,7 @@ object AppLogger : Logger {
         directory
             ?.listFiles { file -> file.isFile && file.extension.equals("log", ignoreCase = true) }
             ?.forEach { file ->
-                runCatching { file.delete() }
+                runCatching { FileUtils.deleteFileWithinRoot(file, directory) }
                     .onFailure { Log.w(TAG, "Failed to delete old log file: ${file.absolutePath}", it) }
             }
     }

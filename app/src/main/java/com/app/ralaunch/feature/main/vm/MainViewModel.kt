@@ -8,9 +8,8 @@ import com.app.ralaunch.core.common.GameLaunchManager
 import com.app.ralaunch.core.common.SettingsAccess
 import com.app.ralaunch.core.common.util.AppLogger
 import com.app.ralaunch.R
-import com.app.ralaunch.core.di.contract.GameRepositoryV2
-import com.app.ralaunch.core.di.contract.SettingsRepositoryV2
-import com.app.ralaunch.core.di.service.GameDeletionManager
+import com.app.ralaunch.core.di.contract.IGameRepositoryServiceV3
+import com.app.ralaunch.core.di.contract.ISettingsRepositoryServiceV2
 import com.app.ralaunch.core.navigation.NavDestination
 import com.app.ralaunch.core.navigation.NavigationEvent
 import com.app.ralaunch.core.model.GameItem
@@ -38,10 +37,9 @@ import kotlinx.coroutines.withContext
 
 class MainViewModel(
     private val appContext: Context,
-    private val gameRepository: GameRepositoryV2,
+    private val gameRepository: IGameRepositoryServiceV3,
     private val gameLaunchManager: GameLaunchManager,
-    private val gameDeletionManager: GameDeletionManager,
-    private val settingsRepository: SettingsRepositoryV2,
+    private val settingsRepository: ISettingsRepositoryServiceV2,
     private val announcementRepositoryService: AnnouncementRepositoryService,
     private val launcherUpdateChecker: LauncherUpdateChecker
 ) : ViewModel() {
@@ -304,7 +302,7 @@ class MainViewModel(
                     return@launch
                 }
 
-                val filesDeleted = gameDeletionManager.deleteGameFiles(game)
+                val filesDeleted = gameRepository.deleteGameFiles(game)
                 gameRepository.removeById(game.id)
 
                 if (filesDeleted) {

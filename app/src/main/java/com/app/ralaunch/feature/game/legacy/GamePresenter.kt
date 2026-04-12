@@ -5,7 +5,7 @@ import com.app.ralaunch.R
 import com.app.ralaunch.core.platform.runtime.GameLauncher
 import com.app.ralaunch.feature.patch.data.Patch
 import com.app.ralaunch.feature.patch.data.PatchManager
-import com.app.ralaunch.core.di.contract.GameRepositoryV2
+import com.app.ralaunch.core.di.contract.IGameRepositoryServiceV3
 import org.koin.java.KoinJavaComponent
 import com.app.ralaunch.core.common.util.AppLogger
 import com.app.ralaunch.feature.game.ui.legacy.GameActivity
@@ -86,10 +86,10 @@ class GamePresenter : GameContract.Presenter {
     }
 
     private fun launchFromStorageId(view: GameContract.View, gameStorageId: String): Int {
-        val gameRepository: GameRepositoryV2 = try {
-            KoinJavaComponent.get(GameRepositoryV2::class.java)
+        val gameRepository: IGameRepositoryServiceV3 = try {
+            KoinJavaComponent.get(IGameRepositoryServiceV3::class.java)
         } catch (e: Exception) {
-            AppLogger.error(TAG, "Failed to resolve GameRepositoryV2", e)
+            AppLogger.error(TAG, "Failed to resolve IGameRepositoryServiceV3", e)
             showLaunchError(view, view.getStringRes(R.string.game_launch_repository_load_failed))
             return -2
         }

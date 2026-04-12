@@ -2,7 +2,7 @@ package com.app.ralaunch.core.common.util
 
 import android.content.Context
 import com.app.ralaunch.core.platform.runtime.AssemblyPatcher
-import com.app.ralaunch.core.di.contract.GameRepositoryV2
+import com.app.ralaunch.core.di.contract.IGameRepositoryServiceV3
 import org.koin.java.KoinJavaComponent
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream
 import java.io.BufferedInputStream
@@ -43,7 +43,7 @@ object PatchExtractor {
 
     private fun extractAndApplyMonoMod(context: Context) {
         val monoModDir = File(context.filesDir, "MonoMod")
-        if (monoModDir.exists()) FileUtils.deleteDirectoryRecursively(monoModDir)
+        if (monoModDir.exists()) FileUtils.deleteDirectoryRecursivelyWithinRoot(monoModDir, context.filesDir)
         monoModDir.mkdirs()
 
         context.assets.open("MonoMod.zip").use { inputStream ->
@@ -81,8 +81,8 @@ object PatchExtractor {
 
     private fun applyMonoModToAllGames(context: Context, monoModDir: File) {
         try {
-            val gameRepository: GameRepositoryV2? = try {
-                KoinJavaComponent.getOrNull(GameRepositoryV2::class.java)
+            val gameRepository: IGameRepositoryServiceV3? = try {
+                KoinJavaComponent.getOrNull(IGameRepositoryServiceV3::class.java)
             } catch (e: Exception) { null }
             if (gameRepository == null) return
             val games = gameRepository.games.value

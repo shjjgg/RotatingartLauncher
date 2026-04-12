@@ -135,14 +135,14 @@ abstract class BaseInstallPlugin : GameInstallPlugin {
      *
      * 注意：此方法处理两种情况：
      * 1. GOG .sh 等会创建嵌套目录结构的安装包：
-     *    - storageRootDir: 由 GameListStorage.createGameDirectory() 创建的目录
+     *    - storageRootDir: 由 IGameRepositoryServiceV3.createGameStorageRoot() 创建的目录
      *    - actualGameDir: 游戏实际解压到的子目录（如 data/noarch/game/）
      *    - game_info.json 将创建在 storageRootDir，路径相对于 storageRootDir
      *
      * 2. ZIP 等直接解压的安装包：
      *    - 使用简化版本，storageRootDir 和 actualGameDir 相同
      *
-     * @param storageRootDir 存储根目录（由 GameListStorage 创建的目录）
+     * @param storageRootDir 存储根目录（由 IGameRepositoryServiceV3 创建的目录）
      * @param actualGameDir 实际游戏文件所在目录（可能是 storageRootDir 的子目录）
      * @param definition 游戏定义
      * @param iconPath 图标路径（相对于 actualGameDir）
@@ -155,7 +155,7 @@ abstract class BaseInstallPlugin : GameInstallPlugin {
     ) {
         val infoFile = File(storageRootDir, "game_info.json")
 
-        // 使用目录名作为存储 ID（与 AndroidGameListStorage 保持一致）
+        // 使用目录名作为存储 ID（与 GameRepositoryServiceV3 保持一致）
         val storageId = storageRootDir.name
 
         // 计算相对于 storageRootDir 的路径
@@ -260,7 +260,7 @@ abstract class BaseInstallPlugin : GameInstallPlugin {
      * 从 GameDefinition 创建 GameItem
      *
      * @param definition 游戏定义
-     * @param storageRootDir 存储根目录（由 GameListStorage 创建的目录）
+     * @param storageRootDir 存储根目录（由 IGameRepositoryServiceV3 创建的目录）
      * @param actualGameDir 实际游戏文件所在目录（可能是 storageRootDir 的子目录）
      * @param iconPath 图标路径（相对于 actualGameDir）
      */
@@ -270,7 +270,7 @@ abstract class BaseInstallPlugin : GameInstallPlugin {
         actualGameDir: File,
         iconPath: String?
     ): GameItem {
-        // 使用目录名作为存储 ID（与 AndroidGameListStorage 保持一致）
+        // 使用目录名作为存储 ID（与 GameRepositoryServiceV3 保持一致）
         val storageId = storageRootDir.name
 
         // 计算相对于 storageRootDir 的路径
