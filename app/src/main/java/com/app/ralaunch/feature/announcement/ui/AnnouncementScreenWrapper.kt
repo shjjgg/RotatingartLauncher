@@ -41,7 +41,6 @@ import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -49,29 +48,26 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.ralaunch.R
 import com.app.ralaunch.feature.announcement.AnnouncementItem
 import com.app.ralaunch.feature.announcement.AnnouncementUiEvent
 import com.app.ralaunch.feature.announcement.AnnouncementUiState
 import com.app.ralaunch.feature.announcement.vm.AnnouncementViewModel
-import com.app.ralaunch.feature.announcement.vm.AnnouncementViewModelFactory
 import com.app.ralaunch.core.ui.component.GlassSurface
 import dev.jeziellago.compose.markdowntext.MarkdownText
+import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AnnouncementScreenWrapper() {
     val context = LocalContext.current
     val activity = context as? ComponentActivity ?: return
-
-    val viewModel: AnnouncementViewModel = remember(activity) {
-        ViewModelProvider(
-            activity,
-            AnnouncementViewModelFactory(activity.applicationContext)
-        )[AnnouncementViewModel::class.java]
-    }
+    val viewModelStoreOwner = activity as? ViewModelStoreOwner ?: return
+    val viewModel: AnnouncementViewModel = koinViewModel(
+        viewModelStoreOwner = viewModelStoreOwner
+    )
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(uiState.selectedAnnouncementId) {

@@ -7,12 +7,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStoreOwner
 import com.app.ralaunch.R
 import com.app.ralaunch.feature.controls.packs.ControlPackItem
 import com.app.ralaunch.feature.controls.packs.ControlPackRepositoryService
 import com.app.ralaunch.feature.controls.packs.vm.ControlPackViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import org.koin.compose.viewmodel.koinViewModel
 
 /**
  * 控制包商店页面 Wrapper
@@ -25,16 +26,12 @@ fun ControlStoreScreenWrapper(
 ) {
     val context = LocalContext.current
     val activity = context as? Activity ?: return
-    
-    // 使用 ViewModel - 通过 Activity 作为 ViewModelStoreOwner
-    val viewModel: ControlPackViewModel = remember {
-        ViewModelProvider(
-            activity as ViewModelStoreOwner,
-            ControlPackViewModel.Factory(context)
-        )[ControlPackViewModel::class.java]
-    }
-    
-    val uiState by viewModel.uiState.collectAsState()
+    val viewModelStoreOwner = activity as? ViewModelStoreOwner ?: return
+    val viewModel: ControlPackViewModel = koinViewModel(
+        viewModelStoreOwner = viewModelStoreOwner
+    )
+
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var selectedPack by remember { mutableStateOf<ControlPackItem?>(null) }
     
     // 获取仓库 URL

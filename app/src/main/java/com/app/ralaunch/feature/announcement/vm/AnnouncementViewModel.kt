@@ -2,7 +2,6 @@ package com.app.ralaunch.feature.announcement.vm
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.app.ralaunch.R
 import com.app.ralaunch.feature.announcement.AnnouncementRepositoryService
@@ -14,8 +13,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.koin.java.KoinJavaComponent
-
 class AnnouncementViewModel(
     private val appContext: Context,
     private val repositoryService: AnnouncementRepositoryService
@@ -190,25 +187,5 @@ class AnnouncementViewModel(
         markdownLoadJobs.values.forEach { it.cancel() }
         markdownLoadJobs.clear()
         super.onCleared()
-    }
-}
-
-class AnnouncementViewModelFactory(
-    private val appContext: Context
-) : ViewModelProvider.Factory {
-
-    @Suppress("UNCHECKED_CAST")
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (!modelClass.isAssignableFrom(AnnouncementViewModel::class.java)) {
-            throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
-        }
-
-        val repositoryService: AnnouncementRepositoryService =
-            KoinJavaComponent.get(AnnouncementRepositoryService::class.java)
-
-        return AnnouncementViewModel(
-            appContext = appContext.applicationContext,
-            repositoryService = repositoryService
-        ) as T
     }
 }

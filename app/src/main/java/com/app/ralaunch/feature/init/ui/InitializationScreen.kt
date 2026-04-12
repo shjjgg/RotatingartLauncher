@@ -1,10 +1,5 @@
 package com.app.ralaunch.feature.init.ui
 
-import android.content.Context
-import android.content.Intent
-import android.content.SharedPreferences
-import android.net.Uri
-import android.widget.Toast
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -38,11 +33,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -57,10 +48,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.app.ralaunch.R
-import com.app.ralaunch.core.di.service.PermissionManagerServiceV1
 import com.app.ralaunch.feature.init.model.ComponentState
+import com.app.ralaunch.feature.init.model.InitStep
 import com.app.ralaunch.feature.init.model.InitUiState
-import com.app.ralaunch.core.platform.AppConstants
 import com.app.ralaunch.core.theme.RaLaunchTheme
 
 enum class InitPage { LEGAL, SETUP }
@@ -103,37 +93,16 @@ private fun rememberInitPalette(): InitPalette {
 
 @Composable
 fun InitializationScreen(
-    permissionManager: PermissionManagerServiceV1,
-    onComplete: () -> Unit,
+    uiState: InitUiState,
+    appVersionName: String,
+    onAcceptLegal: () -> Unit,
     onExit: () -> Unit,
-    onExtract: (List<ComponentState>, (Int, Int, Boolean, String) -> Unit) -> Unit,
-    prefs: SharedPreferences,
-    context: Context
+    onOpenOfficialDownload: () -> Unit,
+    onRequestPermissions: () -> Unit,
+    onStartExtraction: () -> Unit
 ) {
-    var currentPage by remember { mutableStateOf(InitPage.LEGAL) }
-    var uiState by remember { mutableStateOf(InitUiState()) }
     val palette = rememberInitPalette()
-    val appVersionName = remember(context) {
-        runCatching {
-            @Suppress("DEPRECATION")
-            context.packageManager.getPackageInfo(context.packageName, 0).versionName.orEmpty()
-        }.getOrDefault("").ifBlank { "Unknown" }
-    }
-
-    LaunchedEffect(Unit) {
-        uiState = uiState.copy(
-            components = listOf(
-                ComponentState(
-                    name = "dotnet",
-                    description = context.getString(R.string.init_component_dotnet_desc),
-                    fileName = "dotnet.tar.xz",
-                    needsExtraction = true
-                )
-            ),
-            hasPermissions = permissionManager.hasRequiredPermissions()
-        )
-        if (prefs.getBoolean(AppConstants.InitKeys.LEGAL_AGREED, false)) currentPage = InitPage.SETUP
-    }
+    val currentPage = if (uiState.step == InitStep.LEGAL) InitPage.LEGAL else InitPage.SETUP
 
     Box(
         modifier = Modifier
@@ -149,42 +118,15 @@ fun InitializationScreen(
                 InitPage.LEGAL -> LegalPage(
                     palette = palette,
                     appVersionName = appVersionName,
-                    onAccept = {
-                        prefs.edit().putBoolean(AppConstants.InitKeys.LEGAL_AGREED, true).apply()
-                        currentPage = InitPage.SETUP
-                    },
+                    onAccept = onAcceptLegal,
                     onDecline = onExit,
-                    context = context
+                    onOpenOfficialDownload = onOpenOfficialDownload
                 )
                 InitPage.SETUP -> SetupPage(
                     palette = palette,
                     uiState = uiState,
-                    onRequestPermissions = {
-                        if (permissionManager.hasRequiredPermissions()) {
-                            prefs.edit().putBoolean(AppConstants.InitKeys.PERMISSIONS_GRANTED, true).apply()
-                            uiState = uiState.copy(hasPermissions = true)
-                        } else {
-                            permissionManager.requestRequiredPermissions(object : PermissionManagerServiceV1.PermissionCallback {
-                                override fun onPermissionsGranted() {
-                                    prefs.edit().putBoolean(AppConstants.InitKeys.PERMISSIONS_GRANTED, true).apply()
-                                    uiState = uiState.copy(hasPermissions = true)
-                                }
-                                override fun onPermissionsDenied() {
-                                    Toast.makeText(context, context.getString(R.string.init_permissions_denied), Toast.LENGTH_LONG).show()
-                                }
-                            })
-                        }
-                    },
-                    onStartExtraction = {
-                        if (uiState.isExtracting) return@SetupPage
-                        uiState = uiState.copy(isExtracting = true, statusMessage = context.getString(R.string.init_preparing_file))
-                        onExtract(uiState.components) { index, progress, installed, status ->
-                            val next = uiState.components.toMutableList()
-                            if (index in next.indices) next[index] = next[index].copy(progress = progress, isInstalled = installed, status = status)
-                            val overall = if (next.isNotEmpty()) next.sumOf { it.progress.coerceIn(0, 100) } / next.size else 0
-                            uiState = uiState.copy(components = next, overallProgress = overall, statusMessage = status, isComplete = overall >= 100)
-                        }
-                    }
+                    onRequestPermissions = onRequestPermissions,
+                    onStartExtraction = onStartExtraction
                 )
             }
         }
@@ -197,7 +139,7 @@ private fun LegalPage(
     appVersionName: String,
     onAccept: () -> Unit,
     onDecline: () -> Unit,
-    context: Context
+    onOpenOfficialDownload: () -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -254,10 +196,7 @@ private fun LegalPage(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 TextButton(
-                    onClick = {
-                        runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/FireworkSky/RotatingartLauncher"))) }
-                            .onFailure { Toast.makeText(context, context.getString(R.string.init_cannot_open_browser), Toast.LENGTH_SHORT).show() }
-                    },
+                    onClick = onOpenOfficialDownload,
                     colors = ButtonDefaults.textButtonColors(contentColor = palette.primaryAction)
                 ) {
                     Text(stringResource(R.string.init_legal_official_download))

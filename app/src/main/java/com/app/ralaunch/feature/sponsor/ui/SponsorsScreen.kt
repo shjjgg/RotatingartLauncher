@@ -38,6 +38,8 @@ import com.app.ralaunch.feature.sponsor.Sponsor
 import com.app.ralaunch.feature.sponsor.SponsorRepository
 import com.app.ralaunch.feature.sponsor.SponsorRepositoryService
 import com.app.ralaunch.feature.sponsor.SponsorTier
+import com.app.ralaunch.feature.sponsor.vm.SponsorsUiState
+import com.app.ralaunch.feature.sponsor.vm.SponsorsViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
@@ -51,6 +53,7 @@ import nl.dionsegijn.konfetti.core.models.Size
 import nl.dionsegijn.konfetti.xml.KonfettiView
 import java.util.concurrent.TimeUnit
 import kotlin.random.Random
+import org.koin.compose.viewmodel.koinViewModel
 
 /**
  * 赞助商星空墙页面 - Compose 版本
@@ -62,32 +65,15 @@ fun SponsorsScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    
-    var uiState by remember { mutableStateOf<SponsorsUiState>(SponsorsUiState.Loading) }
+    val viewModel: SponsorsViewModel = koinViewModel()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var konfettiView by remember { mutableStateOf<KonfettiView?>(null) }
-    
-    val sponsorService = remember { SponsorRepositoryService(context) }
-    
-    // 加载赞助商数据
-    LaunchedEffect(Unit) {
-        val result = sponsorService.fetchSponsors(forceRefresh = true)
-        result.fold(
-            onSuccess = { repository ->
-                if (repository.sponsors.isEmpty()) {
-                    uiState = SponsorsUiState.Error(context.getString(R.string.sponsors_empty))
-                } else {
-                    uiState = SponsorsUiState.Success(repository)
-                    // 延迟播放入场动画
-                    delay(800)
-                    konfettiView?.let { playEntranceCelebration(it) }
-                }
-            },
-            onFailure = { error ->
-                uiState = SponsorsUiState.Error(
-                    context.getString(R.string.sponsors_error) + "\n" + error.message
-                )
-            }
-        )
+
+    LaunchedEffect(uiState) {
+        if (uiState is SponsorsUiState.Success) {
+            delay(800)
+            konfettiView?.let { playEntranceCelebration(it) }
+        }
     }
     
     Box(
@@ -136,26 +122,7 @@ fun SponsorsScreen(
                     is SponsorsUiState.Error -> {
                         ErrorState(
                             message = state.message,
-                            onRetry = {
-                                uiState = SponsorsUiState.Loading
-                                scope.launch {
-                                    val result = sponsorService.fetchSponsors(forceRefresh = true)
-                                    result.fold(
-                                        onSuccess = { repository ->
-                                            if (repository.sponsors.isEmpty()) {
-                                                uiState = SponsorsUiState.Error(context.getString(R.string.sponsors_empty))
-                                            } else {
-                                                uiState = SponsorsUiState.Success(repository)
-                                            }
-                                        },
-                                        onFailure = { error ->
-                                            uiState = SponsorsUiState.Error(
-                                                context.getString(R.string.sponsors_error) + "\n" + error.message
-                                            )
-                                        }
-                                    )
-                                }
-                            }
+                            onRetry = viewModel::retry
                         )
                     }
                     is SponsorsUiState.Success -> {
@@ -367,12 +334,6 @@ private fun ErrorState(
             }
         }
     }
-}
-
-private sealed class SponsorsUiState {
-    data object Loading : SponsorsUiState()
-    data class Error(val message: String) : SponsorsUiState()
-    data class Success(val repository: SponsorRepository) : SponsorsUiState()
 }
 
 // Konfetti 效果函数

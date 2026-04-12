@@ -193,12 +193,4 @@ class ControlPackViewModel(
         }
     }
 
-    class Factory(private val context: Context) : ViewModelProvider.Factory {
-        @Suppress("UNCHECKED_CAST")
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            val packManager = ControlPackManager(context)
-            val repoService = ControlPackRepositoryService(context)
-            return ControlPackViewModel(packManager, repoService, context.applicationContext) as T
-        }
-    }
 }

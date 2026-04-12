@@ -1,72 +1,109 @@
 package com.app.ralaunch.feature.init.ui
 
 import android.content.Intent
-import android.content.SharedPreferences
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.LaunchedEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.app.ralaunch.R
 import com.app.ralaunch.core.common.ErrorHandler
-import com.app.ralaunch.core.common.util.AppLogger
-import com.app.ralaunch.core.common.util.FileUtils
 import com.app.ralaunch.core.di.service.PermissionManagerServiceV1
-import com.app.ralaunch.core.extractor.ArchiveExtractor
 import com.app.ralaunch.core.platform.AppConstants
 import com.app.ralaunch.core.theme.RaLaunchTheme
-import com.app.ralaunch.feature.init.ui.InitializationScreen
-import com.app.ralaunch.feature.init.model.ComponentState
+import com.app.ralaunch.feature.init.vm.InitializationEffect
+import com.app.ralaunch.feature.init.vm.InitializationViewModel
 import com.app.ralaunch.feature.main.ui.MainActivityCompose
-import java.io.File
-import java.util.concurrent.Executors
-import java.util.concurrent.atomic.AtomicBoolean
+import kotlinx.coroutines.delay
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 /**
  * 初始化 Activity
  * 独立的横屏初始化界面，完成后跳转主界面
  */
 class InitializationActivity : ComponentActivity() {
+    private val viewModel: InitializationViewModel by viewModel()
 
     private lateinit var permissionManager: PermissionManagerServiceV1
-    private lateinit var prefs: SharedPreferences
-    
-    private val executor = Executors.newSingleThreadExecutor()
-    private val mainHandler = Handler(Looper.getMainLooper())
-    private val isExtracting = AtomicBoolean(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         hideSystemUI()
 
-        prefs = getSharedPreferences(AppConstants.PREFS_NAME, 0)
-
         // 检查是否已完成初始化
-        val extracted = prefs.getBoolean(AppConstants.InitKeys.COMPONENTS_EXTRACTED, false)
+        val extracted = getSharedPreferences(AppConstants.PREFS_NAME, 0)
+            .getBoolean(AppConstants.InitKeys.COMPONENTS_EXTRACTED, false)
         if (extracted) {
             navigateToMain()
             return
         }
 
         permissionManager = PermissionManagerServiceV1(this).apply { initialize() }
+        viewModel.markPermissions(permissionManager.hasRequiredPermissions())
 
         setContent {
+            val uiState = viewModel.uiState.collectAsStateWithLifecycle().value
+
+            LaunchedEffect(uiState.isComplete) {
+                if (uiState.isComplete) {
+                    Toast.makeText(this@InitializationActivity, getString(R.string.init_dotnet_install_success), Toast.LENGTH_SHORT).show()
+                    delay(1000)
+                    navigateToMain()
+                }
+            }
+
+            LaunchedEffect(Unit) {
+                viewModel.effect.collect { effect ->
+                    when (effect) {
+                        is InitializationEffect.OpenUrl -> {
+                            runCatching {
+                                startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(effect.url)))
+                            }.onFailure {
+                                Toast.makeText(this@InitializationActivity, getString(R.string.init_cannot_open_browser), Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                        is InitializationEffect.ShowError -> {
+                            ErrorHandler.handleError(effect.message, RuntimeException(effect.message))
+                            viewModel.consumeError()
+                        }
+                    }
+                }
+            }
+
             RaLaunchTheme {
                 InitializationScreen(
-                    permissionManager = permissionManager,
-                    onComplete = { navigateToMain() },
+                    uiState = uiState,
+                    appVersionName = viewModel.appVersionName,
+                    onAcceptLegal = viewModel::acceptLegal,
                     onExit = { finish() },
-                    onExtract = { components, onUpdate ->
-                        startExtraction(components, onUpdate)
+                    onOpenOfficialDownload = viewModel::openOfficialDownloadPage,
+                    onRequestPermissions = {
+                        if (permissionManager.hasRequiredPermissions()) {
+                            viewModel.markPermissions(true)
+                        } else {
+                            permissionManager.requestRequiredPermissions(object : PermissionManagerServiceV1.PermissionCallback {
+                                override fun onPermissionsGranted() {
+                                    viewModel.markPermissions(true)
+                                }
+
+                                override fun onPermissionsDenied() {
+                                    viewModel.markPermissions(false)
+                                    Toast.makeText(
+                                        this@InitializationActivity,
+                                        getString(R.string.init_permissions_denied),
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                }
+                            })
+                        }
                     },
-                    prefs = prefs,
-                    context = this
+                    onStartExtraction = viewModel::startExtraction
                 )
             }
         }
@@ -83,86 +120,5 @@ class InitializationActivity : ComponentActivity() {
     private fun navigateToMain() {
         startActivity(Intent(this, MainActivityCompose::class.java))
         finish()
-    }
-
-    private fun startExtraction(
-        components: List<ComponentState>,
-        onUpdate: (Int, Int, Boolean, String) -> Unit
-    ) {
-        if (isExtracting.getAndSet(true)) return
-
-        executor.execute {
-            try {
-                extractAll(components, onUpdate)
-                mainHandler.post {
-                    prefs.edit().putBoolean(AppConstants.InitKeys.COMPONENTS_EXTRACTED, true).apply()
-                    Toast.makeText(this, getString(R.string.init_dotnet_install_success), Toast.LENGTH_SHORT).show()
-                    mainHandler.postDelayed({ navigateToMain() }, 1000)
-                }
-            } catch (e: Exception) {
-                AppLogger.error("InitActivity", "Extraction failed", e)
-                mainHandler.post {
-                    ErrorHandler.handleError(e.message ?: getString(R.string.error_message_default), e)
-                }
-            } finally {
-                isExtracting.set(false)
-            }
-        }
-    }
-
-    private fun extractAll(
-        components: List<ComponentState>,
-        onUpdate: (Int, Int, Boolean, String) -> Unit
-    ) {
-        val filesDir = filesDir
-
-        components.forEachIndexed { index, component ->
-            if (!component.needsExtraction) {
-                mainHandler.post {
-                    onUpdate(index, 100, true, getString(R.string.init_no_extraction_needed))
-                }
-                return@forEachIndexed
-            }
-
-            mainHandler.post {
-                onUpdate(index, 10, false, getString(R.string.init_preparing_file))
-            }
-
-            val tempFile = File(cacheDir, "temp_${component.fileName}")
-            ArchiveExtractor.copyAssetToFile(this, component.fileName, tempFile)
-
-            mainHandler.post {
-                onUpdate(index, 30, false, getString(R.string.init_extracting))
-            }
-
-            val outputDir = File(filesDir, component.name).apply { mkdirs() }
-            val stripPrefix = "${component.name.lowercase()}/"
-
-            val callback = ArchiveExtractor.ProgressCallback { files, _ ->
-                val progress = (40 + minOf(files / 10, 50))
-                mainHandler.post {
-                    onUpdate(index, progress, false, getString(R.string.init_extracting_files, files))
-                }
-            }
-
-            when {
-                component.fileName.endsWith(".tar.xz") ->
-                    ArchiveExtractor.extractTarXz(tempFile, outputDir, stripPrefix, callback)
-                component.fileName.endsWith(".tar.gz") ->
-                    ArchiveExtractor.extractTarGz(tempFile, outputDir, stripPrefix, callback)
-                else ->
-                    ArchiveExtractor.extractTar(tempFile, outputDir, stripPrefix, callback)
-            }
-
-            FileUtils.deleteFileWithinRoot(tempFile, tempFile.parentFile)
-            mainHandler.post {
-                onUpdate(index, 100, true, getString(R.string.init_complete))
-            }
-        }
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        if (!executor.isShutdown) executor.shutdownNow()
     }
 }

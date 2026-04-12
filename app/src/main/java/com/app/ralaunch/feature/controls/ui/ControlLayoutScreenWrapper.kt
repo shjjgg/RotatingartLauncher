@@ -27,13 +27,15 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.app.ralaunch.R
 import com.app.ralaunch.feature.controls.editors.ui.ControlEditorActivity
-import org.koin.java.KoinJavaComponent
 import com.app.ralaunch.feature.controls.packs.ControlPackInfo
 import com.app.ralaunch.feature.controls.packs.ControlPackManager
 import com.app.ralaunch.core.ui.component.AnchoredActionItem
 import com.app.ralaunch.core.ui.component.AnchoredActionMenu
 import com.app.ralaunch.core.ui.component.AnchoredActionMenuStyle
-import java.io.File
+import com.app.ralaunch.feature.controls.vm.ControlLayoutViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
 
 /**
  * 控制布局管理 Screen - 纯 Composable 版本
@@ -46,29 +48,10 @@ fun ControlLayoutScreenWrapper(
     onOpenStore: () -> Unit = {}
 ) {
     val context = LocalContext.current
-    val packManager = remember { KoinJavaComponent.get<ControlPackManager>(ControlPackManager::class.java) }
-
-    // 状态
-    var layouts by remember { mutableStateOf<List<ControlPackInfo>>(emptyList()) }
-    var selectedPackId by remember { mutableStateOf<String?>(null) }
-    var quickSwitchIds by remember { mutableStateOf<List<String>>(emptyList()) }
-    var showCreateDialog by remember { mutableStateOf(false) }
-    var showDeleteDialog by remember { mutableStateOf<ControlPackInfo?>(null) }
-    var showRenameDialog by remember { mutableStateOf<ControlPackInfo?>(null) }
-    var showMoreMenu by remember { mutableStateOf<ControlPackInfo?>(null) }
+    val packManager: ControlPackManager = koinInject()
+    val viewModel: ControlLayoutViewModel = koinViewModel()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var exportingPackId by remember { mutableStateOf<String?>(null) }
-
-    // 加载布局列表
-    fun loadLayouts() {
-        layouts = packManager.getInstalledPacks()
-        selectedPackId = packManager.getSelectedPackId()
-        quickSwitchIds = packManager.getQuickSwitchPackIds()
-    }
-
-    // 初始加载
-    LaunchedEffect(Unit) {
-        loadLayouts()
-    }
 
     // Activity Result Launchers
     val exportLauncher = rememberLauncherForActivityResult(
@@ -77,6 +60,7 @@ fun ControlLayoutScreenWrapper(
         uri?.let { exportUri ->
             exportingPackId?.let { packId ->
                 exportPackToZip(context, packManager, exportUri, packId)
+                viewModel.loadLayouts()
             }
         }
         exportingPackId = null
@@ -86,131 +70,76 @@ fun ControlLayoutScreenWrapper(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
         uri?.let { 
-            importPackFromUri(context, packManager, it) { loadLayouts() }
-        }
-    }
-
-    // 创建新布局
-    fun createNewLayout(name: String) {
-        if (name.isBlank()) return
-
-        if (layouts.any { it.name.equals(name, ignoreCase = true) }) {
-            Toast.makeText(context, context.getString(R.string.control_layout_name_exists), Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        val newPack = packManager.createPack(name)
-
-        if (selectedPackId == null) {
-            packManager.setSelectedPackId(newPack.id)
-        }
-
-        showCreateDialog = false
-        loadLayouts()
-        ControlEditorActivity.start(context, newPack.id)
-    }
-
-    // 设为默认
-    fun setDefaultLayout(pack: ControlPackInfo) {
-        packManager.setSelectedPackId(pack.id)
-        selectedPackId = pack.id
-        Toast.makeText(context, context.getString(R.string.control_set_as_default), Toast.LENGTH_SHORT).show()
-    }
-
-    // 重命名
-    fun renameLayout(pack: ControlPackInfo, newName: String) {
-        if (newName.isBlank()) return
-
-        if (layouts.any { it.id != pack.id && it.name.equals(newName, ignoreCase = true) }) {
-            Toast.makeText(context, context.getString(R.string.control_layout_name_exists), Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        packManager.renamePack(pack.id, newName)
-        showRenameDialog = null
-        loadLayouts()
-    }
-
-    // 删除
-    fun deleteLayout(pack: ControlPackInfo) {
-        packManager.deletePack(pack.id)
-
-        if (selectedPackId == pack.id) {
-            val remaining = packManager.getInstalledPacks()
-            packManager.setSelectedPackId(remaining.firstOrNull()?.id)
-        }
-
-        showDeleteDialog = null
-        loadLayouts()
-        Toast.makeText(context, context.getString(R.string.control_layout_deleted), Toast.LENGTH_SHORT).show()
-    }
-
-    // 预览状态
-    var showPreviewDialog by remember { mutableStateOf<ControlPackInfo?>(null) }
-    
-    // 获取预览图路径
-    fun getPreviewImages(pack: ControlPackInfo): List<File> {
-        val packDir = packManager.getPackDir(pack.id)
-        return if (pack.previewImagePaths.isNotEmpty()) {
-            pack.previewImagePaths.mapNotNull { path ->
-                val file = File(packDir, path)
-                if (file.exists()) file else null
-            }
-        } else {
-            // 尝试默认 preview.jpg/png
-            listOf("preview.jpg", "preview.png", "preview.webp").mapNotNull { name ->
-                val file = File(packDir, name)
-                if (file.exists()) file else null
-            }
+            importPackFromUri(context, packManager, it) { viewModel.loadLayouts() }
         }
     }
 
     // UI
     ControlLayoutScreen(
-        layouts = layouts,
-        selectedPackId = selectedPackId,
-        quickSwitchIds = quickSwitchIds,
-        showCreateDialog = showCreateDialog,
-        showDeleteDialog = showDeleteDialog,
-        showRenameDialog = showRenameDialog,
-        showMoreMenu = showMoreMenu,
+        layouts = uiState.layouts,
+        selectedPackId = uiState.selectedPackId,
+        quickSwitchIds = uiState.quickSwitchIds,
+        selectedLayout = uiState.selectedLayout,
+        showCreateDialog = uiState.showCreateDialog,
+        showDeleteDialog = uiState.deleteDialogPack,
+        showRenameDialog = uiState.renameDialogPack,
+        showMoreMenu = uiState.moreMenuPack,
         onBack = onBack,
         onOpenStore = onOpenStore,
-        onCreateClick = { showCreateDialog = true },
-        onCreateConfirm = { createNewLayout(it) },
-        onCreateDismiss = { showCreateDialog = false },
-        onLayoutClick = { pack -> ControlEditorActivity.start(context, pack.id) },
-        onSetDefault = { setDefaultLayout(it) },
-        onToggleQuickSwitch = { packId, enabled ->
-            if (enabled) packManager.addToQuickSwitch(packId)
-            else packManager.removeFromQuickSwitch(packId)
-            quickSwitchIds = packManager.getQuickSwitchPackIds()
+        onLayoutSelect = viewModel::selectLayout,
+        onCreateClick = viewModel::showCreateDialog,
+        onCreateConfirm = { name ->
+            viewModel.createNewLayout(name)
+                .onSuccess { newPack ->
+                    ControlEditorActivity.start(context, newPack.id)
+                }
+                .onFailure { error ->
+                    Toast.makeText(context, error.message ?: "", Toast.LENGTH_SHORT).show()
+                }
         },
-        onShowMoreMenu = { showMoreMenu = it },
-        onDismissMoreMenu = { showMoreMenu = null },
-        onRenameClick = { showRenameDialog = it; showMoreMenu = null },
-        onRenameConfirm = { pack, name -> renameLayout(pack, name) },
-        onRenameDismiss = { showRenameDialog = null },
-        onDeleteClick = { showDeleteDialog = it; showMoreMenu = null },
-        onDeleteConfirm = { deleteLayout(it) },
-        onDeleteDismiss = { showDeleteDialog = null },
+        onCreateDismiss = viewModel::dismissCreateDialog,
+        onLayoutClick = { pack -> ControlEditorActivity.start(context, pack.id) },
+        onSetDefault = {
+            viewModel.setDefaultLayout(it)
+            Toast.makeText(context, context.getString(R.string.control_set_as_default), Toast.LENGTH_SHORT).show()
+        },
+        onToggleQuickSwitch = { packId, enabled ->
+            viewModel.toggleQuickSwitch(packId, enabled)
+        },
+        onShowMoreMenu = viewModel::showMoreMenu,
+        onDismissMoreMenu = viewModel::dismissMoreMenu,
+        onRenameClick = viewModel::showRenameDialog,
+        onRenameConfirm = { pack, name ->
+            viewModel.renameLayout(pack, name)
+                .onFailure { error ->
+                    Toast.makeText(context, error.message ?: "", Toast.LENGTH_SHORT).show()
+                }
+        },
+        onRenameDismiss = viewModel::dismissRenameDialog,
+        onDeleteClick = viewModel::showDeleteDialog,
+        onDeleteConfirm = {
+            if (viewModel.deleteLayout(it)) {
+                Toast.makeText(context, context.getString(R.string.control_layout_deleted), Toast.LENGTH_SHORT).show()
+            }
+        },
+        onDeleteDismiss = viewModel::dismissDeleteDialog,
         onExportClick = { pack ->
             exportingPackId = pack.id
             exportLauncher.launch("${pack.name}.zip")
-            showMoreMenu = null
+            viewModel.dismissMoreMenu()
         },
         onImportClick = { importLauncher.launch(arrayOf("application/zip")) },
-        onPreviewClick = { showPreviewDialog = it }
+        onPreviewClick = viewModel::showPreview
     )
     
     // 本地布局预览对话框
-    showPreviewDialog?.let { pack ->
+    uiState.previewPack?.let { pack ->
         LocalLayoutPreviewDialog(
             pack = pack,
-            previewImages = getPreviewImages(pack),
-            onDismiss = { showPreviewDialog = null },
+            previewImages = viewModel.getPreviewImages(pack),
+            onDismiss = viewModel::dismissPreview,
             onEditClick = { 
-                showPreviewDialog = null
+                viewModel.dismissPreview()
                 ControlEditorActivity.start(context, pack.id)
             }
         )
@@ -224,12 +153,14 @@ private fun ControlLayoutScreen(
     layouts: List<ControlPackInfo>,
     selectedPackId: String?,
     quickSwitchIds: List<String>,
+    selectedLayout: ControlPackInfo?,
     showCreateDialog: Boolean,
     showDeleteDialog: ControlPackInfo?,
     showRenameDialog: ControlPackInfo?,
     showMoreMenu: ControlPackInfo?,
     onBack: () -> Unit,
     onOpenStore: () -> Unit,
+    onLayoutSelect: (ControlPackInfo) -> Unit,
     onCreateClick: () -> Unit,
     onCreateConfirm: (String) -> Unit,
     onCreateDismiss: () -> Unit,
@@ -249,16 +180,6 @@ private fun ControlLayoutScreen(
     onPreviewClick: (ControlPackInfo) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // 当前选中的布局（用于右侧详情面板）
-    var selectedLayout by remember { mutableStateOf<ControlPackInfo?>(null) }
-    
-    // 初始选中默认布局
-    LaunchedEffect(layouts, selectedPackId) {
-        if (selectedLayout == null || layouts.none { it.id == selectedLayout?.id }) {
-            selectedLayout = layouts.find { it.id == selectedPackId } ?: layouts.firstOrNull()
-        }
-    }
-
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -273,7 +194,7 @@ private fun ControlLayoutScreen(
                 quickSwitchIds = quickSwitchIds,
                 selectedLayout = selectedLayout,
                 showMoreMenu = showMoreMenu,
-                onLayoutSelect = { selectedLayout = it },
+                onLayoutSelect = onLayoutSelect,
                 onLayoutClick = onLayoutClick,
                 onSetDefault = onSetDefault,
                 onShowMoreMenu = onShowMoreMenu,

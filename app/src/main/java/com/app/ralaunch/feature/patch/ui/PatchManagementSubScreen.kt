@@ -29,21 +29,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.ralaunch.R
-import com.app.ralaunch.core.di.contract.IGameRepositoryServiceV3
 import com.app.ralaunch.core.model.GameItem
 import com.app.ralaunch.feature.patch.data.Patch
-import com.app.ralaunch.feature.patch.data.PatchManager
-import com.app.ralaunch.core.common.util.StreamUtils
-import com.app.ralaunch.core.common.util.TemporaryFileAcquirer
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.Dispatchers
+import com.app.ralaunch.feature.patch.vm.PatchManagementViewModel
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import org.koin.java.KoinJavaComponent
+import org.koin.compose.viewmodel.koinViewModel
 import java.io.File
-import java.nio.file.Files
-import java.nio.file.Paths
 
 /**
  * 补丁管理子页面
@@ -56,40 +49,8 @@ fun PatchManagementSubScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    
-    val gameRepository: IGameRepositoryServiceV3? = remember {
-        try { KoinJavaComponent.getOrNull(IGameRepositoryServiceV3::class.java) } catch (_: Exception) { null }
-    }
-    val patchManager: PatchManager? = remember {
-        try { KoinJavaComponent.getOrNull(PatchManager::class.java) } catch (_: Exception) { null }
-    }
-    
-    var games by remember { mutableStateOf<List<GameItem>>(emptyList()) }
-    var selectedGame by remember { mutableStateOf<GameItem?>(null) }
-    var selectedGameIndex by remember { mutableIntStateOf(-1) }
-    var patches by remember { mutableStateOf<List<Patch>>(emptyList()) }
-    
-    // 加载游戏列表
-    LaunchedEffect(gameRepository) {
-        gameRepository?.games?.collectLatest { repositoryGames ->
-            games = repositoryGames
-            if (selectedGame?.id !in repositoryGames.map { it.id }) {
-                selectedGame = null
-                selectedGameIndex = -1
-            } else {
-                selectedGameIndex = repositoryGames.indexOfFirst { it.id == selectedGame?.id }
-            }
-        } ?: run {
-            games = emptyList()
-        }
-    }
-    
-    // 当选择游戏改变时加载补丁
-    LaunchedEffect(selectedGame) {
-        patches = selectedGame?.let { game ->
-            patchManager?.getApplicablePatches(game.gameId) ?: emptyList()
-        } ?: emptyList()
-    }
+    val viewModel: PatchManagementViewModel = koinViewModel()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     
     // 文件选择器
     val patchFilePicker = rememberLauncherForActivityResult(
@@ -97,13 +58,14 @@ fun PatchManagementSubScreen(
     ) { uri: Uri? ->
         uri?.let {
             scope.launch {
-                importPatchFile(context, patchManager, it) { success ->
-                    if (success) {
-                        // 刷新补丁列表
-                        selectedGame?.let { game ->
-                            patches = patchManager?.getApplicablePatches(game.gameId) ?: emptyList()
-                        }
-                    }
+                val success = viewModel.importPatch(it)
+                if (success) {
+                    Toast.makeText(context, R.string.patch_dialog_import_successful, Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(context, R.string.patch_dialog_import_failed, Toast.LENGTH_SHORT).show()
+                }
+                if (success) {
+                    viewModel.refreshPatches()
                 }
             }
         }
@@ -152,20 +114,37 @@ fun PatchManagementSubScreen(
             ) {
                 // 左侧：游戏列表
                 GameListPanel(
-                    games = games,
-                    selectedIndex = selectedGameIndex,
-                    onGameSelected = { game, index ->
-                        selectedGame = game
-                        selectedGameIndex = index
-                    },
+                    games = uiState.games,
+                    selectedIndex = uiState.selectedGameIndex,
+                    onGameSelected = viewModel::selectGame,
                     modifier = Modifier.weight(1f)
                 )
 
                 // 右侧：补丁列表
                 PatchListPanel(
-                    patches = patches,
-                    selectedGame = selectedGame,
-                    patchManager = patchManager,
+                    patches = uiState.patches,
+                    selectedGame = uiState.selectedGame,
+                    isPatchEnabled = viewModel::isPatchEnabled,
+                    onPatchEnabledChange = { patch, enabled ->
+                        viewModel.setPatchEnabled(patch.manifest.id, enabled)
+                        val statusText = if (enabled) {
+                            context.getString(R.string.patch_enabled)
+                        } else {
+                            context.getString(R.string.patch_disabled)
+                        }
+                        uiState.selectedGame?.let { selectedGame ->
+                            Toast.makeText(
+                                context,
+                                context.getString(
+                                    R.string.patch_status_changed_message,
+                                    selectedGame.displayedName,
+                                    patch.manifest.name,
+                                    statusText
+                                ),
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    },
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -311,11 +290,10 @@ private fun DefaultGameIcon() {
 private fun PatchListPanel(
     patches: List<Patch>,
     selectedGame: GameItem?,
-    patchManager: PatchManager?,
+    isPatchEnabled: (String) -> Boolean,
+    onPatchEnabledChange: (Patch, Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
-    
     Card(
         modifier = modifier.fillMaxHeight(),
         shape = RoundedCornerShape(16.dp),
@@ -367,9 +345,10 @@ private fun PatchListPanel(
                         items(patches) { patch ->
                             PatchItem(
                                 patch = patch,
-                                selectedGame = selectedGame,
-                                patchManager = patchManager,
-                                context = context
+                                isEnabled = isPatchEnabled(patch.manifest.id),
+                                onCheckedChange = { enabled ->
+                                    onPatchEnabledChange(patch, enabled)
+                                }
                             )
                         }
                     }
@@ -382,18 +361,9 @@ private fun PatchListPanel(
 @Composable
 private fun PatchItem(
     patch: Patch,
-    selectedGame: GameItem,
-    patchManager: PatchManager?,
-    context: android.content.Context
+    isEnabled: Boolean,
+    onCheckedChange: (Boolean) -> Unit
 ) {
-    // Use absolute path for patch config, not relative path
-    val gameAsmPath = remember(selectedGame) {
-        selectedGame.gameExePathFull?.let { Paths.get(it) } ?: Paths.get(selectedGame.gameExePathRelative)
-    }
-    var isEnabled by remember(patch, selectedGame) {
-        mutableStateOf(patchManager?.isPatchEnabled(gameAsmPath, patch.manifest.id) ?: false)
-    }
-    
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
@@ -427,60 +397,8 @@ private fun PatchItem(
             
             Switch(
                 checked = isEnabled,
-                onCheckedChange = { checked ->
-                    patchManager?.setPatchEnabled(gameAsmPath, patch.manifest.id, checked)
-                    isEnabled = checked
-                    val statusText = if (checked) {
-                        context.getString(R.string.patch_enabled)
-                    } else {
-                        context.getString(R.string.patch_disabled)
-                    }
-                    Toast.makeText(
-                        context,
-                        context.getString(
-                            R.string.patch_status_changed_message,
-                            selectedGame.displayedName,
-                            patch.manifest.name,
-                            statusText
-                        ),
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
+                onCheckedChange = onCheckedChange
             )
-        }
-    }
-}
-
-private suspend fun importPatchFile(
-    context: android.content.Context,
-    patchManager: PatchManager?,
-    uri: Uri,
-    onResult: (Boolean) -> Unit
-) {
-    withContext(Dispatchers.IO) {
-        try {
-            TemporaryFileAcquirer().use { tfa ->
-                val tempPatchPath = tfa.acquireTempFilePath("imported_patch.zip")
-                context.contentResolver.openInputStream(uri)?.use { inputStream ->
-                    Files.newOutputStream(tempPatchPath).use { outputStream ->
-                        StreamUtils.transferTo(inputStream, outputStream)
-                    }
-                }
-                val result = patchManager?.installPatch(tempPatchPath) ?: false
-                withContext(Dispatchers.Main) {
-                    if (result) {
-                        Toast.makeText(context, R.string.patch_dialog_import_successful, Toast.LENGTH_SHORT).show()
-                    } else {
-                        Toast.makeText(context, R.string.patch_dialog_import_failed, Toast.LENGTH_SHORT).show()
-                    }
-                    onResult(result)
-                }
-            }
-        } catch (e: Exception) {
-            withContext(Dispatchers.Main) {
-                Toast.makeText(context, R.string.patch_dialog_import_failed, Toast.LENGTH_SHORT).show()
-                onResult(false)
-            }
         }
     }
 }

@@ -1,5 +1,7 @@
 package com.app.ralaunch.core.di
 
+import android.content.Context
+import android.content.SharedPreferences
 import androidx.activity.ComponentActivity
 import androidx.appcompat.app.AppCompatActivity
 import com.app.ralaunch.core.common.GameLaunchManager
@@ -12,15 +14,31 @@ import com.app.ralaunch.core.di.service.SettingsRepositoryServiceV2
 import com.app.ralaunch.core.di.service.StoragePathsProviderServiceV1
 import com.app.ralaunch.core.di.service.ThemeManagerServiceV1
 import com.app.ralaunch.core.di.service.VibrationManagerServiceV1
+import com.app.ralaunch.core.platform.AppConstants
 import com.app.ralaunch.feature.announcement.AnnouncementRepositoryService
+import com.app.ralaunch.feature.announcement.vm.AnnouncementViewModel
+import com.app.ralaunch.feature.controls.editors.vm.ControlEditorViewModel
 import com.app.ralaunch.feature.controls.packs.ControlPackManager
+import com.app.ralaunch.feature.controls.packs.ControlPackRepositoryService
+import com.app.ralaunch.feature.controls.packs.vm.ControlPackViewModel
+import com.app.ralaunch.feature.controls.vm.ControlLayoutViewModel
+import com.app.ralaunch.feature.filebrowser.vm.FileBrowserViewModel
+import com.app.ralaunch.feature.gog.data.GogDownloader
+import com.app.ralaunch.feature.gog.data.api.GogAuthClient
+import com.app.ralaunch.feature.gog.data.api.GogWebsiteApi
+import com.app.ralaunch.feature.gog.domain.ModLoaderConfigManager
+import com.app.ralaunch.feature.gog.vm.GogViewModel
+import com.app.ralaunch.feature.init.vm.InitializationViewModel
 import com.app.ralaunch.feature.installer.vm.InstallerViewModel
 import com.app.ralaunch.feature.main.update.LauncherUpdateChecker
 import com.app.ralaunch.feature.main.vm.MainViewModel
 import com.app.ralaunch.feature.patch.data.PatchManager
+import com.app.ralaunch.feature.patch.vm.PatchManagementViewModel
 import com.app.ralaunch.feature.script.JavaScriptExecutor
 import com.app.ralaunch.feature.settings.vm.AppInfo
 import com.app.ralaunch.feature.settings.vm.SettingsViewModel
+import com.app.ralaunch.feature.sponsor.SponsorRepositoryService
+import com.app.ralaunch.feature.sponsor.vm.SponsorsViewModel
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
@@ -46,6 +64,10 @@ val appModule = module {
 
     single<ISettingsRepositoryServiceV2> {
         SettingsRepositoryServiceV2(storagePathsProvider = get())
+    }
+
+    single<SharedPreferences> {
+        androidContext().getSharedPreferences(AppConstants.PREFS_NAME, Context.MODE_PRIVATE)
     }
 
     // ==================== App Info ====================
@@ -83,6 +105,10 @@ val appModule = module {
     }
 
     single {
+        ControlPackRepositoryService(androidContext())
+    }
+
+    single {
         GameLaunchManager(androidContext())
     }
 
@@ -96,6 +122,26 @@ val appModule = module {
         } catch (e: Exception) {
             null
         }
+    }
+
+    single {
+        GogAuthClient(androidContext())
+    }
+
+    single {
+        GogWebsiteApi(get())
+    }
+
+    single {
+        GogDownloader(get())
+    }
+
+    single {
+        ModLoaderConfigManager(androidContext())
+    }
+
+    single {
+        SponsorRepositoryService(androidContext())
     }
 
     // ==================== ViewModels ====================
@@ -122,6 +168,71 @@ val appModule = module {
         InstallerViewModel(
             appContext = androidContext(),
             gameRepository = get()
+        )
+    }
+
+    viewModel {
+        AnnouncementViewModel(
+            appContext = androidContext(),
+            repositoryService = get()
+        )
+    }
+
+    viewModel {
+        ControlPackViewModel(
+            packManager = get(),
+            repoService = get(),
+            context = androidContext()
+        )
+    }
+
+    viewModel {
+        ControlEditorViewModel(
+            appContext = androidContext(),
+            packManager = get()
+        )
+    }
+
+    viewModel {
+        FileBrowserViewModel()
+    }
+
+    viewModel {
+        GogViewModel(
+            appContext = androidContext(),
+            authClient = get(),
+            websiteApi = get(),
+            downloader = get(),
+            modLoaderConfigManager = get()
+        )
+    }
+
+    viewModel {
+        InitializationViewModel(
+            appContext = androidContext(),
+            prefs = get()
+        )
+    }
+
+    viewModel {
+        ControlLayoutViewModel(
+            appContext = androidContext(),
+            packManager = get()
+        )
+    }
+
+    viewModel {
+        PatchManagementViewModel(
+            appContext = androidContext(),
+            gameRepository = get(),
+            patchManager = getOrNull()
+        )
+    }
+
+    viewModel {
+        SponsorsViewModel(
+            appContext = androidContext(),
+            sponsorService = get()
         )
     }
 
