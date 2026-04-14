@@ -157,9 +157,9 @@ data class AppSettings(
     var lastAnnouncementId: String = "",
     var isAnnouncementBadgeShown: Boolean = false,
 
-    // Box64 设置
-    var box64Enabled: Boolean = false,
-    var box64GamePath: String = ""
+    // Runtime 设置
+    var selectedDotnetRuntimeVersion: String = "",
+    var selectedBox64RuntimeVersion: String = ""
 ) {
     companion object {
         val Default: AppSettings

@@ -6,10 +6,12 @@ import androidx.activity.ComponentActivity
 import androidx.appcompat.app.AppCompatActivity
 import com.app.ralaunch.core.common.GameLaunchManager
 import com.app.ralaunch.core.di.contract.IGameRepositoryServiceV3
+import com.app.ralaunch.core.di.contract.IRuntimeManagerServiceV2
 import com.app.ralaunch.core.di.contract.ISettingsRepositoryServiceV2
 import com.app.ralaunch.core.di.contract.IThemeManagerServiceV1
 import com.app.ralaunch.core.di.service.GameRepositoryServiceV3
 import com.app.ralaunch.core.di.service.PermissionManagerServiceV1
+import com.app.ralaunch.core.di.service.RuntimeManagerServiceV2
 import com.app.ralaunch.core.di.service.SettingsRepositoryServiceV2
 import com.app.ralaunch.core.di.service.StoragePathsProviderServiceV1
 import com.app.ralaunch.core.di.service.ThemeManagerServiceV1
@@ -32,6 +34,7 @@ import com.app.ralaunch.feature.init.vm.InitializationViewModel
 import com.app.ralaunch.feature.installer.vm.InstallerViewModel
 import com.app.ralaunch.feature.main.update.LauncherUpdateChecker
 import com.app.ralaunch.feature.main.vm.MainViewModel
+import com.app.ralaunch.feature.main.vm.GameInfoEditViewModel
 import com.app.ralaunch.feature.patch.data.PatchManager
 import com.app.ralaunch.feature.patch.vm.PatchManagementViewModel
 import com.app.ralaunch.feature.script.JavaScriptExecutor
@@ -64,6 +67,13 @@ val appModule = module {
 
     single<ISettingsRepositoryServiceV2> {
         SettingsRepositoryServiceV2(storagePathsProvider = get())
+    }
+
+    single<IRuntimeManagerServiceV2> {
+        RuntimeManagerServiceV2(
+            settingsRepository = get(),
+            pathsProvider = get()
+        )
     }
 
     single<SharedPreferences> {
@@ -149,6 +159,7 @@ val appModule = module {
     viewModel {
         SettingsViewModel(
             settingsRepository = get<ISettingsRepositoryServiceV2>(),
+            runtimeManager = get(),
             appInfo = getOrNull<AppInfo>() ?: AppInfo()
         )
     }
@@ -161,6 +172,12 @@ val appModule = module {
             settingsRepository = get(),
             announcementRepositoryService = get(),
             launcherUpdateChecker = get()
+        )
+    }
+
+    viewModel {
+        GameInfoEditViewModel(
+            runtimeManager = get()
         )
     }
 
@@ -210,7 +227,8 @@ val appModule = module {
     viewModel {
         InitializationViewModel(
             appContext = androidContext(),
-            prefs = get()
+            prefs = get(),
+            runtimeManager = get()
         )
     }
 

@@ -9,6 +9,7 @@ import androidx.appcompat.app.AppCompatDelegate
 import com.app.ralaunch.feature.controls.packs.ControlPackManager
 import com.app.ralaunch.core.common.SettingsAccess
 import com.app.ralaunch.core.di.KoinInitializer
+import com.app.ralaunch.core.di.contract.IRuntimeManagerServiceV2
 import com.app.ralaunch.core.di.service.VibrationManagerServiceV1
 import com.app.ralaunch.core.common.util.DensityAdapter
 import com.app.ralaunch.core.common.util.LocaleManager
@@ -50,6 +51,7 @@ class RaLaunchApp : Application(), KoinComponent {
     private val _vibrationManager: VibrationManagerServiceV1 by inject()
     private val _controlPackManager: ControlPackManager by inject()
     private val _patchManager: PatchManager? by inject()
+    private val _runtimeManager: IRuntimeManagerServiceV2 by inject()
 
     override fun onCreate() {
         super.onCreate()
@@ -61,16 +63,19 @@ class RaLaunchApp : Application(), KoinComponent {
         // 2. 初始化 Koin DI（必须在使用 inject 之前）
         KoinInitializer.init(this)
 
-        // 3. 应用主题设置
+        // 3. 启动时迁移旧运行时布局，仅在主进程执行一次
+        runRuntimeMigrationOnAppLaunch()
+
+        // 4. 应用主题设置
         applyThemeFromSettings()
 
-        // 4. 初始化崩溃捕获
+        // 5. 初始化崩溃捕获
         initCrashHandler()
 
-        // 5. 后台安装补丁
+        // 6. 后台安装补丁
         installPatchesInBackground()
 
-        // 6. 设置环境变量
+        // 7. 设置环境变量
         setupEnvironmentVariables()
     }
 
@@ -97,6 +102,18 @@ class RaLaunchApp : Application(), KoinComponent {
             AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
         }
     }
+
+    private fun runRuntimeMigrationOnAppLaunch() {
+        if (!isMainAppProcess()) return
+
+        try {
+            _runtimeManager.migrateLegacyInstallations()
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to migrate legacy runtimes on app launch: ${e.message}", e)
+        }
+    }
+
+    private fun isMainAppProcess(): Boolean = getProcessName() == packageName
 
     /**
      * 初始化崩溃捕获

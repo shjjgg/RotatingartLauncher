@@ -25,8 +25,8 @@ object AppConstants {
         const val GAMES = "games"
         /** 日志目录 */
         const val LOGS = "logs"
-        /** 控制布局目录 */
-        const val CONTROLS = "controls"
+        /** 运行时目录 */
+        const val RUNTIMES = "runtimes"
         /** 补丁目录 */
         const val PATCHES = "patches"
     }
@@ -38,8 +38,6 @@ object AppConstants {
         const val GAME_LIST = "game_list.json"
         /** 单个游戏信息 JSON */
         const val GAME_INFO = "game_info.json"
-        /** 控制布局状态 JSON */
-        const val CONTROL_LAYOUT_STATE = "control_layout_state.json"
         /** 设置 JSON */
         const val SETTINGS = "settings.json"
     }

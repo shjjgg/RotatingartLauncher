@@ -94,7 +94,9 @@ object DotNetNativeLibraryLoader {
                 return null
             }
 
-            val versions = runtimeDir.list()
+            val versions = runtimeDir.list()?.sortedWith { left, right ->
+                compareVersions(right, left)
+            }
             if (versions.isNullOrEmpty()) {
                 Log.e(TAG, "No runtime versions found in: ${runtimeDir.absolutePath}")
                 return null
@@ -107,5 +109,19 @@ object DotNetNativeLibraryLoader {
             Log.e(TAG, "查找运行时路径失败", e)
             null
         }
+    }
+
+    private fun compareVersions(left: String, right: String): Int {
+        val leftParts = left.split(".").map { it.toIntOrNull() ?: 0 }
+        val rightParts = right.split(".").map { it.toIntOrNull() ?: 0 }
+        val maxLength = maxOf(leftParts.size, rightParts.size)
+        for (index in 0 until maxLength) {
+            val leftPart = leftParts.getOrElse(index) { 0 }
+            val rightPart = rightParts.getOrElse(index) { 0 }
+            if (leftPart != rightPart) {
+                return leftPart.compareTo(rightPart)
+            }
+        }
+        return 0
     }
 }

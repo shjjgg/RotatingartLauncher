@@ -83,7 +83,7 @@ object ArchiveExtractor {
 
             when {
                 entry.isDirectory -> extractDirectory(targetFile)
-                entry.isSymbolicLink -> extractSymlink(targetFile, entry.linkName)
+                entry.isSymbolicLink -> extractSymlink(targetDir, targetFile, entry.linkName)
                 else -> extractFile(tarIn, targetFile, entry.mode)
             }
 
@@ -130,10 +130,10 @@ object ArchiveExtractor {
         if (!targetFile.exists()) targetFile.mkdirs()
     }
 
-    private fun extractSymlink(targetFile: File, linkTarget: String) {
+    private fun extractSymlink(targetDir: File, targetFile: File, linkTarget: String) {
         targetFile.parentFile?.takeIf { !it.exists() }?.mkdirs()
         if (targetFile.exists()) {
-            FileUtils.deleteFileWithinRoot(targetFile, targetFile.parentFile)
+            FileUtils.deleteFileWithinRoot(targetFile, targetDir)
         }
 
         try {

@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.app.ralaunch.R
 import com.app.ralaunch.core.common.util.FileUtils
+import com.app.ralaunch.core.di.contract.IRuntimeManagerServiceV2
 import com.app.ralaunch.core.extractor.ArchiveExtractor
 import com.app.ralaunch.core.platform.AppConstants
 import com.app.ralaunch.feature.init.model.ComponentState
@@ -21,6 +22,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.io.File
+import kotlin.io.path.Path
+import kotlin.io.path.createDirectories
+import kotlin.io.path.exists
+import kotlin.io.path.moveTo
 
 sealed class InitializationEffect {
     data class OpenUrl(val url: String) : InitializationEffect()
@@ -29,7 +34,8 @@ sealed class InitializationEffect {
 
 class InitializationViewModel(
     private val appContext: Context,
-    private val prefs: SharedPreferences
+    private val prefs: SharedPreferences,
+    private val runtimeManager: IRuntimeManagerServiceV2
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(InitUiState())
     val uiState: StateFlow<InitUiState> = _uiState.asStateFlow()
@@ -130,9 +136,7 @@ class InitializationViewModel(
         }
     }
 
-    private fun extractAll(components: List<ComponentState>) {
-        val filesDir = appContext.filesDir
-
+    private suspend fun extractAll(components: List<ComponentState>) {
         components.forEachIndexed { index, component ->
             if (!component.needsExtraction) {
                 updateComponent(index, 100, true, appContext.getString(R.string.init_no_extraction_needed))
@@ -146,8 +150,16 @@ class InitializationViewModel(
 
             updateComponent(index, 30, false, appContext.getString(R.string.init_extracting))
 
-            val outputDir = File(filesDir, component.name).apply { mkdirs() }
-            val stripPrefix = "${component.name.lowercase()}/"
+            val runtimeType = IRuntimeManagerServiceV2.RuntimeType.fromDirName(component.name)
+                ?: error("Unsupported runtime component: ${component.name}")
+            val stagingRootDir = Path(appContext.cacheDir.absolutePath, "runtime-staging")
+            val stagingDir = stagingRootDir.resolve(component.name)
+            if (stagingDir.exists() &&
+                !FileUtils.deleteDirectoryRecursivelyWithinRoot(stagingDir, stagingRootDir)
+            ) {
+                throw IllegalStateException("Failed to clear staging directory for ${component.name}")
+            }
+            stagingDir.createDirectories()
 
             val callback = ArchiveExtractor.ProgressCallback { files, _ ->
                 val progress = 40 + minOf(files / 10, 50)
@@ -161,14 +173,30 @@ class InitializationViewModel(
 
             when {
                 component.fileName.endsWith(".tar.xz") ->
-                    ArchiveExtractor.extractTarXz(tempFile, outputDir, stripPrefix, callback)
+                    ArchiveExtractor.extractTarXz(tempFile, stagingDir.toFile(), null, callback)
                 component.fileName.endsWith(".tar.gz") ->
-                    ArchiveExtractor.extractTarGz(tempFile, outputDir, stripPrefix, callback)
+                    ArchiveExtractor.extractTarGz(tempFile, stagingDir.toFile(), null, callback)
                 else ->
-                    ArchiveExtractor.extractTar(tempFile, outputDir, stripPrefix, callback)
+                    ArchiveExtractor.extractTar(tempFile, stagingDir.toFile(), null, callback)
             }
 
-            FileUtils.deleteFileWithinRoot(tempFile, tempFile.parentFile)
+            val runtimeVersion = when (runtimeType) {
+                IRuntimeManagerServiceV2.RuntimeType.DOTNET -> runtimeManager.detectDotNetRuntimeVersion(stagingDir)
+                IRuntimeManagerServiceV2.RuntimeType.BOX64 -> throw IllegalStateException("Box64 archive extraction is not configured")
+            } ?: throw IllegalStateException("Failed to detect runtime version for ${component.name}")
+
+            val installDir = runtimeManager.getRuntimeInstallPath(runtimeType, runtimeVersion)
+            val runtimeTypeDir = runtimeManager.getRuntimeTypeRootPath(runtimeType)
+            runtimeTypeDir.createDirectories()
+            if (installDir.exists() &&
+                !FileUtils.deleteDirectoryRecursivelyWithinRoot(installDir, runtimeTypeDir)
+            ) {
+                throw IllegalStateException("Failed to replace runtime directory: $installDir")
+            }
+            stagingDir.moveTo(installDir)
+            runtimeManager.setSelectedRuntimeVersion(runtimeType, runtimeVersion)
+
+            FileUtils.deleteFileWithinRoot(tempFile, appContext.cacheDir)
             updateComponent(index, 100, true, appContext.getString(R.string.init_complete))
         }
     }

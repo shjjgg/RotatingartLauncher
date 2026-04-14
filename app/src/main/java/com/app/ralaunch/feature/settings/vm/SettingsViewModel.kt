@@ -2,6 +2,7 @@ package com.app.ralaunch.feature.settings.vm
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.app.ralaunch.core.di.contract.IRuntimeManagerServiceV2
 import com.app.ralaunch.core.platform.runtime.RendererRegistry
 import com.app.ralaunch.core.model.BackgroundType
 import com.app.ralaunch.core.model.FpsLimit
@@ -11,6 +12,7 @@ import com.app.ralaunch.core.di.contract.ISettingsRepositoryServiceV2
 import com.app.ralaunch.core.common.util.getAppString
 import com.app.ralaunch.R
 import com.app.ralaunch.feature.settings.ui.SettingsCategory
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -46,6 +48,8 @@ data class SettingsUiState(
     val lowLatencyAudioEnabled: Boolean = false,
     val ralAudioBufferSize: Int? = null,
     val rendererType: String = DEFAULT_RENDERER_ID,
+    val selectedDotNetRuntimeVersion: String? = null,
+    val installedDotNetRuntimeVersions: List<String> = emptyList(),
 
     // 启动器设置
     val multiplayerEnabled: Boolean = false,
@@ -99,6 +103,7 @@ sealed class SettingsEvent {
     data class SetLowLatencyAudio(val enabled: Boolean) : SettingsEvent()
     data class SetRalAudioBufferSize(val size: Int?) : SettingsEvent()
     data class SetRenderer(val renderer: String) : SettingsEvent()
+    data class SetDotNetRuntimeVersion(val version: String) : SettingsEvent()
 
     // 启动器
     data class SetMultiplayerEnabled(val enabled: Boolean) : SettingsEvent()
@@ -133,6 +138,7 @@ sealed class SettingsEffect {
  */
 class SettingsViewModel(
     private val settingsRepository: ISettingsRepositoryServiceV2,
+    private val runtimeManager: IRuntimeManagerServiceV2,
     private val appInfo: AppInfo = AppInfo()
 ) : ViewModel() {
 
@@ -174,6 +180,7 @@ class SettingsViewModel(
             is SettingsEvent.SetLowLatencyAudio -> setLowLatencyAudio(event.enabled)
             is SettingsEvent.SetRalAudioBufferSize -> setRalAudioBufferSize(event.size)
             is SettingsEvent.SetRenderer -> setRenderer(event.renderer)
+            is SettingsEvent.SetDotNetRuntimeVersion -> setDotNetRuntimeVersion(event.version)
 
             // 启动器
             is SettingsEvent.SetMultiplayerEnabled -> setMultiplayerEnabled(event.enabled)
@@ -202,8 +209,11 @@ class SettingsViewModel(
     }
 
     private fun loadSettings() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             val settings = settingsRepository.getSettingsSnapshot()
+            val installedDotNetRuntimeVersions = runtimeManager.getInstalledVersions(
+                IRuntimeManagerServiceV2.RuntimeType.DOTNET
+            )
             _uiState.update { state ->
                 state.copy(
                     // 外观
@@ -224,6 +234,10 @@ class SettingsViewModel(
                     lowLatencyAudioEnabled = settings.sdlAaudioLowLatency,
                     ralAudioBufferSize = normalizeRalAudioBufferSize(settings.ralAudioBufferSize),
                     rendererType = RendererRegistry.normalizeRendererId(settings.fnaRenderer),
+                    selectedDotNetRuntimeVersion = settings.selectedDotnetRuntimeVersion
+                        .trim()
+                        .ifBlank { null },
+                    installedDotNetRuntimeVersions = installedDotNetRuntimeVersions,
                     // 启动器
                     multiplayerEnabled = settings.multiplayerEnabled,
                     multiplayerDisclaimerAccepted = settings.multiplayerDisclaimerAccepted,
@@ -388,6 +402,21 @@ class SettingsViewModel(
         viewModelScope.launch {
             settingsRepository.update { fnaRenderer = normalized }
             _uiState.update { it.copy(rendererType = normalized) }
+        }
+    }
+
+    private fun setDotNetRuntimeVersion(version: String) {
+        val normalized = version.trim()
+        if (normalized.isEmpty()) return
+
+        viewModelScope.launch {
+            settingsRepository.update { selectedDotnetRuntimeVersion = normalized }
+            _uiState.update { it.copy(selectedDotNetRuntimeVersion = normalized) }
+            sendEffect(
+                SettingsEffect.ShowToast(
+                    getAppString(R.string.main_runtime_switched, normalized)
+                )
+            )
         }
     }
 

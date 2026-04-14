@@ -19,6 +19,7 @@ import kotlin.io.path.Path
  * @property iconPathRelative 图标相对路径（相对于游戏存储根目录），可为空
  * @property modLoaderEnabled 是否启用 ModLoader
  * @property rendererOverride 渲染器覆盖（null 表示跟随全局设置）
+ * @property dotNetRuntimeVersionOverride .NET 运行时版本覆盖（null 表示跟随全局设置）
  * @property gameEnvVars 游戏环境变量（null 值表示在启动前 unset 对应变量）
  * @property gameRepositoryParent 父仓库实例引用（非序列化，反序列化后需手动设置）
  */
@@ -32,6 +33,7 @@ data class GameItem(
     var iconPathRelative: String? = null,
     var modLoaderEnabled: Boolean = true,
     var rendererOverride: String? = null,
+    var dotNetRuntimeVersionOverride: String? = null,
     var gameEnvVars: Map<String, String?> = emptyMap(),
 
     @Transient

@@ -129,6 +129,7 @@ class GamePresenter : GameContract.Presenter {
             args = emptyArray(),
             enabledPatches = enabledPatches,
             rendererOverride = normalizeOptional(game.rendererOverride),
+            dotNetRuntimeVersionOverride = normalizeOptional(game.dotNetRuntimeVersionOverride),
             gameEnvVars = game.gameEnvVars
         )
     }
@@ -170,6 +171,7 @@ class GamePresenter : GameContract.Presenter {
             args = gameArgs,
             enabledPatches = enabledPatches,
             rendererOverride = gameRendererOverride,
+            dotNetRuntimeVersionOverride = null,
             gameEnvVars = gameEnvVars
         )
     }
@@ -179,6 +181,7 @@ class GamePresenter : GameContract.Presenter {
         args: Array<String>,
         enabledPatches: List<Patch>,
         rendererOverride: String?,
+        dotNetRuntimeVersionOverride: String?,
         gameEnvVars: Map<String, String?>
     ): Int {
         val exitCode = GameLauncher.launchDotNetAssembly(
@@ -186,6 +189,7 @@ class GamePresenter : GameContract.Presenter {
             args = args,
             enabledPatches = enabledPatches,
             rendererOverride = rendererOverride,
+            dotNetRuntimeVersionOverride = dotNetRuntimeVersionOverride,
             gameEnvVars = gameEnvVars
         ).also { code ->
             onGameExit(code, GameLauncher.getLastErrorMessage())

@@ -2,7 +2,8 @@ package com.app.ralaunch.core.di.service
 
 import android.content.Context
 import com.app.ralaunch.core.platform.AppConstants
-import java.io.File
+import kotlin.io.path.Path
+import kotlin.io.path.absolutePathString
 
 /**
  * 存储路径提供器。
@@ -10,13 +11,28 @@ import java.io.File
 class StoragePathsProviderServiceV1(
     private val context: Context
 ) {
-    fun gamesDirPathFull(): String {
-        return File(context.getExternalFilesDir(null), AppConstants.Dirs.GAMES).also {
-            if (!it.exists()) it.mkdirs()
-        }.absolutePath
+    fun gamesDirPathFull(): String =
+        externalFilesDirPath().resolve(AppConstants.Dirs.GAMES).absolutePathString()
+
+    fun settingsFilePathFull(): String =
+        Path(context.filesDir.absolutePath).resolve(AppConstants.Files.SETTINGS).absolutePathString()
+
+    fun filesDirPathFull(): String = Path(context.filesDir.absolutePath).absolutePathString()
+
+    fun runtimesDirPathFull(): String =
+        Path(context.filesDir.absolutePath).resolve(AppConstants.Dirs.RUNTIMES).absolutePathString()
+
+    fun legacyDotnetDirPathFull(): String =
+        Path(context.filesDir.absolutePath).resolve(LEGACY_DOTNET_DIR_NAME).absolutePathString()
+
+    private fun externalFilesDirPath() = run {
+        val externalFilesDir = requireNotNull(context.getExternalFilesDir(null)) {
+            "External files directory is unavailable"
+        }
+        Path(externalFilesDir.absolutePath)
     }
 
-    fun settingsFilePathFull(): String {
-        return File(context.filesDir, AppConstants.Files.SETTINGS).absolutePath
+    private companion object {
+        const val LEGACY_DOTNET_DIR_NAME = "dotnet"
     }
 }

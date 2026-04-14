@@ -96,6 +96,8 @@ import com.app.ralaunch.core.navigation.NavState
 import com.app.ralaunch.core.navigation.navigateToLogViewer
 import com.app.ralaunch.core.navigation.navigateToPatchManagement
 import com.app.ralaunch.core.platform.runtime.AndroidRendererRegistry
+import com.app.ralaunch.core.ui.dialog.DotNetRuntimeOption
+import com.app.ralaunch.core.ui.dialog.DotNetRuntimeSelectDialog
 import com.app.ralaunch.core.ui.dialog.LanguageSelectDialog
 import com.app.ralaunch.core.ui.dialog.LicenseDialog
 import com.app.ralaunch.core.ui.dialog.RendererSelectDialog
@@ -466,6 +468,7 @@ private fun GameSettingsPane(
     viewModel: SettingsViewModel,
     uiState: SettingsUiState
 ) {
+    var showDotNetRuntimeDialog by remember { mutableStateOf(false) }
     var showRendererDialog by remember { mutableStateOf(false) }
     val availableRenderers = remember { buildRendererOptions() }
     val qualityOptions = listOf(
@@ -480,6 +483,14 @@ private fun GameSettingsPane(
         FpsLimit.FPS_60 to androidStringResource(R.string.settings_fps_60)
     )
     with(uiState) {
+        val dotNetRuntimeOptions = remember(installedDotNetRuntimeVersions) {
+            installedDotNetRuntimeVersions.map { version ->
+                DotNetRuntimeOption(version = version)
+            }
+        }
+        val currentDotNetRuntimeVersion = selectedDotNetRuntimeVersion
+            ?.takeIf { it in installedDotNetRuntimeVersions }
+            ?: installedDotNetRuntimeVersions.firstOrNull()
         val currentFpsName = fpsOptions.find { it.first == targetFps }?.second
             ?: androidStringResource(R.string.settings_fps_unlimited)
 
@@ -516,6 +527,21 @@ private fun GameSettingsPane(
                         ?: androidStringResource(R.string.common_auto),
                     onValueChange = {
                         viewModel.onEvent(SettingsEvent.SetRalAudioBufferSize(sliderPositionToAudioBufferSize(it)))
+                    }
+                )
+            }
+
+            SettingsSection(title = androidStringResource(R.string.settings_game_runtime_section)) {
+                ClickableSettingItem(
+                    title = androidStringResource(R.string.main_runtime_title),
+                    subtitle = androidStringResource(R.string.settings_game_runtime_subtitle),
+                    value = currentDotNetRuntimeVersion
+                        ?: androidStringResource(R.string.runtime_not_installed),
+                    icon = Icons.Default.Storage,
+                    onClick = {
+                        if (dotNetRuntimeOptions.isNotEmpty()) {
+                            showDotNetRuntimeDialog = true
+                        }
                     }
                 )
             }
@@ -574,6 +600,18 @@ private fun GameSettingsPane(
             }
         }
 
+        if (showDotNetRuntimeDialog) {
+            DotNetRuntimeSelectDialog(
+                currentRuntimeVersion = currentDotNetRuntimeVersion,
+                runtimes = dotNetRuntimeOptions,
+                onSelect = { version ->
+                    viewModel.onEvent(SettingsEvent.SetDotNetRuntimeVersion(version))
+                    showDotNetRuntimeDialog = false
+                },
+                onDismiss = { showDotNetRuntimeDialog = false }
+            )
+        }
+
         if (showRendererDialog) {
             RendererSelectDialog(
                 currentRenderer = rendererType,
@@ -599,8 +637,10 @@ private fun LauncherSettingsPane(
     val scope = rememberCoroutineScope()
     var showMultiplayerDisclaimerDialog by remember { mutableStateOf(false) }
     var showAssetCheckDialog by remember { mutableStateOf(false) }
+    var showForceAssetReinstallDialog by remember { mutableStateOf(false) }
     var assetCheckResult by remember { mutableStateOf<AssetIntegrityChecker.CheckResult?>(null) }
     var isCheckingAssets by remember { mutableStateOf(false) }
+    var isForceReinstallingAssets by remember { mutableStateOf(false) }
     val assetStatusSummary = assetStatusSummaryState.value
 
     SettingsPaneColumn {
@@ -635,6 +675,15 @@ private fun LauncherSettingsPane(
                         assetStatusSummaryState.value = AssetIntegrityChecker.getStatusSummary(context)
                     }
                 }
+            )
+
+            SettingsDivider()
+
+            ClickableSettingItem(
+                title = androidStringResource(R.string.settings_reextract_runtime_title),
+                subtitle = androidStringResource(R.string.settings_launcher_reextract_runtime_subtitle),
+                icon = Icons.Default.Refresh,
+                onClick = { showForceAssetReinstallDialog = true }
             )
         }
 
@@ -689,6 +738,35 @@ private fun LauncherSettingsPane(
                 ).show()
             },
             onDismiss = { showMultiplayerDisclaimerDialog = false }
+        )
+    }
+
+    if (showForceAssetReinstallDialog) {
+        ForceAssetReinstallDialog(
+            isReinstalling = isForceReinstallingAssets,
+            onConfirm = {
+                scope.launch {
+                    isForceReinstallingAssets = true
+                    val fixResult = AssetIntegrityChecker.forceReinstall(context)
+                    isForceReinstallingAssets = false
+                    assetStatusSummaryState.value = AssetIntegrityChecker.getStatusSummary(context)
+
+                    if (fixResult.success) {
+                        showForceAssetReinstallDialog = false
+                        Toast.makeText(context, fixResult.message, Toast.LENGTH_LONG).show()
+                    } else {
+                        Toast.makeText(
+                            context,
+                            context.getString(
+                                R.string.settings_fix_failed,
+                                fixResult.errors.firstOrNull() ?: fixResult.message
+                            ),
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+            },
+            onDismiss = { showForceAssetReinstallDialog = false }
         )
     }
 
