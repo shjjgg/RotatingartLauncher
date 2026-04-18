@@ -1,8 +1,8 @@
 package com.app.ralaunch.feature.main
 
-import com.app.ralaunch.core.di.service.ThemeManager
+import com.app.ralaunch.core.di.service.ThemeManagerServiceV1
 import com.app.ralaunch.core.common.util.AppLogger
-import com.app.ralaunch.feature.main.background.view.VideoBackgroundView
+import com.app.ralaunch.feature.main.ui.background.VideoBackgroundView
 import java.lang.ref.WeakReference
 
 /**
@@ -12,7 +12,7 @@ import java.lang.ref.WeakReference
  * 视频 View 由 Compose 的 VideoBackground 组件创建并注册到此管理器
  */
 class VideoBackgroundManager(
-    private val themeManager: ThemeManager
+    private val themeManager: ThemeManagerServiceV1
 ) {
     companion object {
         private const val TAG = "VideoBackgroundManager"

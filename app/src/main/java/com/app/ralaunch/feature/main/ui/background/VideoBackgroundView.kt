@@ -1,4 +1,4 @@
-package com.app.ralaunch.feature.main.background.view
+package com.app.ralaunch.feature.main.ui.background
 
 import android.content.Context
 import android.media.MediaPlayer

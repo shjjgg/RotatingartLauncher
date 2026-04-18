@@ -119,43 +119,6 @@ object GameLauncher {
     }
 
     /**
-     * 初始化 SDL JNI 环境
-     * Initialize SDL JNI environment
-     *
-     * 重要：此方法只设置 JNI 环境和 Context，不会调用 SDL.initialize()。
-     * Important: This method only sets up JNI environment and Context,
-     * it does NOT call SDL.initialize().
-     *
-     * 原因：当从 GameActivity（继承自 SDLActivity）启动时，
-     * SDLActivity.onCreate() 已经初始化了 SDL。
-     * 再次调用 SDL.initialize() 会重置 mSingleton 和 mSurface 为 null。
-     *
-     * Reason: When launched from GameActivity (extends SDLActivity),
-     * SDLActivity.onCreate() has already initialized SDL.
-     * Calling SDL.initialize() again would reset mSingleton and mSurface to null.
-     *
-     * @param context Android 上下文，供 SDL 音频系统使用
-     *                Android context for SDL audio system
-     */
-    private fun initializeSDLJNI(context: Context) {
-        if (isSDLJNIInitialized) return
-
-        try {
-            AppLogger.info(TAG, "正在初始化 SDL JNI 环境 / Initializing SDL JNI environment...")
-            SDL.setupJNI()
-
-            // 只设置 Context，不调用 initialize()
-            // Only set Context, do NOT call initialize()
-            SDL.setContext(context)
-            isSDLJNIInitialized = true
-
-            AppLogger.info(TAG, "SDL JNI 初始化成功（未重新初始化 SDLActivity）/ SDL JNI initialized successfully (without re-initializing SDLActivity)")
-        } catch (e: Exception) {
-            AppLogger.warn(TAG, "SDL JNI 初始化失败 / Failed to initialize SDL JNI: ${e.message}")
-        }
-    }
-
-    /**
      * 启动 .NET 程序集
      * Launch a .NET assembly
      *
@@ -191,6 +154,8 @@ object GameLauncher {
      *                       List of patches to enable, null means no patches
      * @param rendererOverride 可选的渲染器覆盖（null 表示使用全局设置）
      *                         Optional renderer override (null means use global setting)
+     * @param dotNetRuntimeVersionOverride 可选的 .NET 运行时版本覆盖（null 表示使用全局设置）
+     *                                     Optional .NET runtime version override (null means use global setting)
      * @param gameEnvVars 游戏环境变量（null 值表示在启动前 unset 对应变量）
      *                    Game environment variables (null value means unset before launch)
      * @return 程序集退出代码：
@@ -203,6 +168,7 @@ object GameLauncher {
         args: Array<String>,
         enabledPatches: List<Patch>? = null,
         rendererOverride: String? = null,
+        dotNetRuntimeVersionOverride: String? = null,
         gameEnvVars: Map<String, String?> = emptyMap()
     ): Int {
         try {
@@ -370,7 +336,11 @@ object GameLauncher {
             // 步骤11：启动 .NET 运行时
             // Step 11: Launch .NET runtime
             AppLogger.info(TAG, "通过 hostfxr 启动 .NET 运行时 / Launching .NET runtime with hostfxr...")
-            val result = DotNetLauncher.hostfxrLaunch(assemblyPath, args)
+            val result = DotNetLauncher.hostfxrLaunch(
+                assemblyPath = assemblyPath,
+                args = args,
+                dotNetRuntimeVersionOverride = dotNetRuntimeVersionOverride
+            )
 
             AppLogger.info(TAG, "=== .NET 程序集启动完成 / .NET Assembly Launch Completed ===")
             AppLogger.info(TAG, "退出代码 / Exit code: $result")

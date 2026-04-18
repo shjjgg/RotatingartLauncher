@@ -4,8 +4,8 @@ import android.util.Log
 import android.view.View
 import android.widget.FrameLayout
 import com.app.ralaunch.feature.controls.ControlData
-import com.app.ralaunch.feature.controls.views.ControlLayout
-import com.app.ralaunch.feature.controls.views.ControlView
+import com.app.ralaunch.feature.controls.ui.ControlLayout
+import com.app.ralaunch.feature.controls.ui.ControlView
 
 /**
  * 控件数据同步管理器
@@ -152,4 +152,3 @@ object ControlDataSyncManager {
         }
     }
 }
-

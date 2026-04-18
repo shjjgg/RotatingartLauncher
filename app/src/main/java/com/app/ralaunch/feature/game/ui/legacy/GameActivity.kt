@@ -1,4 +1,4 @@
-package com.app.ralaunch.feature.game.legacy
+package com.app.ralaunch.feature.game.ui.legacy
 
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -23,7 +23,9 @@ import com.app.ralaunch.R
 import com.app.ralaunch.feature.game.input.GameImeHelper
 import com.app.ralaunch.feature.game.input.GameTouchBridge
 import com.app.ralaunch.feature.game.GameVirtualControlsManager
-import com.app.ralaunch.feature.crash.CrashReportActivity
+import com.app.ralaunch.feature.crash.ui.CrashReportActivity
+import com.app.ralaunch.feature.game.legacy.GameContract
+import com.app.ralaunch.feature.game.legacy.GamePresenter
 import com.app.ralaunch.core.common.SettingsAccess
 import com.app.ralaunch.core.common.GameFullscreenManager
 import com.app.ralaunch.core.common.util.AppLogger
@@ -89,12 +91,15 @@ class GameActivity : SDLActivity(), GameContract.View {
             context: Context,
             gameStorageId: String
         ) {
-            context.startActivity(
-                createLaunchIntent(
-                    context = context,
-                    gameStorageId = gameStorageId
-                )
-            )
+            val intent = createLaunchIntent(
+                context = context,
+                gameStorageId = gameStorageId
+            ).apply {
+                if (context !is Activity) {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+            }
+            context.startActivity(intent)
             (context as? Activity)?.overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
         }
 
@@ -107,16 +112,19 @@ class GameActivity : SDLActivity(), GameContract.View {
             gameRendererOverride: String?,
             gameEnvVars: Map<String, String?> = emptyMap()
         ) {
-            context.startActivity(
-                createLaunchIntent(
-                    context = context,
-                    gameExePath = gameExePath,
-                    gameArgs = gameArgs,
-                    gameId = gameId,
-                    gameRendererOverride = gameRendererOverride,
-                    gameEnvVars = gameEnvVars
-                )
-            )
+            val intent = createLaunchIntent(
+                context = context,
+                gameExePath = gameExePath,
+                gameArgs = gameArgs,
+                gameId = gameId,
+                gameRendererOverride = gameRendererOverride,
+                gameEnvVars = gameEnvVars
+            ).apply {
+                if (context !is Activity) {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+            }
+            context.startActivity(intent)
             (context as? Activity)?.overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
         }
 

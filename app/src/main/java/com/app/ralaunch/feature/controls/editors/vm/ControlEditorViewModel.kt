@@ -1,4 +1,4 @@
-package com.app.ralaunch.feature.controls.editors
+package com.app.ralaunch.feature.controls.editors.vm
 
 import android.content.Context
 import androidx.compose.ui.geometry.Offset
@@ -8,7 +8,6 @@ import com.app.ralaunch.R
 import com.app.ralaunch.feature.controls.ControlData
 import com.app.ralaunch.feature.controls.packs.ControlLayout
 import com.app.ralaunch.feature.controls.packs.ControlPackManager
-import org.koin.java.KoinJavaComponent
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,9 +18,10 @@ import java.util.UUID
  * 控件编辑器 ViewModel
  * 管理编辑器状态、选中控件以及数据持久化
  */
-class ControlEditorViewModel : ViewModel() {
-    private val appContext: Context = KoinJavaComponent.get(Context::class.java)
-    private val packManager: ControlPackManager = KoinJavaComponent.get(ControlPackManager::class.java)
+class ControlEditorViewModel(
+    private val appContext: Context,
+    private val packManager: ControlPackManager
+) : ViewModel() {
 
     private fun nextControlName(baseLabelResId: Int, count: Int): String {
         return "${appContext.getString(baseLabelResId)} $count"

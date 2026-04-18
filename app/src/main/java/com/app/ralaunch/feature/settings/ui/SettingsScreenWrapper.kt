@@ -1,4 +1,4 @@
-package com.app.ralaunch.feature.main.screens
+package com.app.ralaunch.feature.settings.ui
 
 import android.app.Activity
 import android.widget.Toast
@@ -92,11 +92,14 @@ import com.app.ralaunch.R
 import com.app.ralaunch.core.common.SettingsAccess
 import com.app.ralaunch.core.common.util.AssetIntegrityChecker
 import com.app.ralaunch.core.common.util.LocaleManager
+import com.app.ralaunch.core.navigation.NavState
+import com.app.ralaunch.core.navigation.navigateToLogViewer
+import com.app.ralaunch.core.navigation.navigateToPatchManagement
 import com.app.ralaunch.core.platform.runtime.AndroidRendererRegistry
-import com.app.ralaunch.feature.patch.ui.PatchManagementDialogCompose
+import com.app.ralaunch.core.ui.dialog.DotNetRuntimeOption
+import com.app.ralaunch.core.ui.dialog.DotNetRuntimeSelectDialog
 import com.app.ralaunch.core.ui.dialog.LanguageSelectDialog
 import com.app.ralaunch.core.ui.dialog.LicenseDialog
-import com.app.ralaunch.core.ui.dialog.LogViewerDialog
 import com.app.ralaunch.core.ui.dialog.RendererSelectDialog
 import com.app.ralaunch.core.ui.dialog.ThemeColorSelectDialog
 import com.app.ralaunch.core.model.BackgroundType
@@ -104,17 +107,17 @@ import com.app.ralaunch.core.model.FpsLimit
 import com.app.ralaunch.core.model.QualityLevel
 import com.app.ralaunch.core.model.ThemeMode
 import com.app.ralaunch.core.theme.AppThemeState
-import com.app.ralaunch.feature.settings.ClickableSettingItem
-import com.app.ralaunch.feature.settings.SettingsCategory
-import com.app.ralaunch.feature.settings.SettingsDivider
-import com.app.ralaunch.feature.settings.SettingsEffect
-import com.app.ralaunch.feature.settings.SettingsEvent
-import com.app.ralaunch.feature.settings.SettingsScreenContent
-import com.app.ralaunch.feature.settings.SettingsSection
-import com.app.ralaunch.feature.settings.SettingsUiState
-import com.app.ralaunch.feature.settings.SettingsViewModel
-import com.app.ralaunch.feature.settings.SliderSettingItem
-import com.app.ralaunch.feature.settings.SwitchSettingItem
+import com.app.ralaunch.feature.settings.ui.ClickableSettingItem
+import com.app.ralaunch.feature.settings.ui.SettingsCategory
+import com.app.ralaunch.feature.settings.ui.SettingsDivider
+import com.app.ralaunch.feature.settings.ui.SettingsScreenContent
+import com.app.ralaunch.feature.settings.ui.SettingsSection
+import com.app.ralaunch.feature.settings.ui.SliderSettingItem
+import com.app.ralaunch.feature.settings.ui.SwitchSettingItem
+import com.app.ralaunch.feature.settings.vm.SettingsEffect
+import com.app.ralaunch.feature.settings.vm.SettingsEvent
+import com.app.ralaunch.feature.settings.vm.SettingsUiState
+import com.app.ralaunch.feature.settings.vm.SettingsViewModel
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 import java.util.Locale
@@ -123,6 +126,7 @@ import androidx.compose.ui.res.stringResource as androidStringResource
 
 @Composable
 fun SettingsScreenWrapper(
+    navState: NavState,
     onCheckLauncherUpdate: () -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -170,12 +174,14 @@ fun SettingsScreenWrapper(
             )
 
             SettingsCategory.LAUNCHER -> LauncherSettingsPane(
+                navState = navState,
                 viewModel = viewModel,
                 uiState = uiState,
                 assetStatusSummaryState = assetStatusSummaryState
             )
 
             SettingsCategory.DEVELOPER -> DeveloperSettingsPane(
+                navState = navState,
                 viewModel = viewModel,
                 uiState = uiState
             )
@@ -462,6 +468,7 @@ private fun GameSettingsPane(
     viewModel: SettingsViewModel,
     uiState: SettingsUiState
 ) {
+    var showDotNetRuntimeDialog by remember { mutableStateOf(false) }
     var showRendererDialog by remember { mutableStateOf(false) }
     val availableRenderers = remember { buildRendererOptions() }
     val qualityOptions = listOf(
@@ -476,6 +483,14 @@ private fun GameSettingsPane(
         FpsLimit.FPS_60 to androidStringResource(R.string.settings_fps_60)
     )
     with(uiState) {
+        val dotNetRuntimeOptions = remember(installedDotNetRuntimeVersions) {
+            installedDotNetRuntimeVersions.map { version ->
+                DotNetRuntimeOption(version = version)
+            }
+        }
+        val currentDotNetRuntimeVersion = selectedDotNetRuntimeVersion
+            ?.takeIf { it in installedDotNetRuntimeVersions }
+            ?: installedDotNetRuntimeVersions.firstOrNull()
         val currentFpsName = fpsOptions.find { it.first == targetFps }?.second
             ?: androidStringResource(R.string.settings_fps_unlimited)
 
@@ -512,6 +527,21 @@ private fun GameSettingsPane(
                         ?: androidStringResource(R.string.common_auto),
                     onValueChange = {
                         viewModel.onEvent(SettingsEvent.SetRalAudioBufferSize(sliderPositionToAudioBufferSize(it)))
+                    }
+                )
+            }
+
+            SettingsSection(title = androidStringResource(R.string.settings_game_runtime_section)) {
+                ClickableSettingItem(
+                    title = androidStringResource(R.string.main_runtime_title),
+                    subtitle = androidStringResource(R.string.settings_game_runtime_subtitle),
+                    value = currentDotNetRuntimeVersion
+                        ?: androidStringResource(R.string.runtime_not_installed),
+                    icon = Icons.Default.Storage,
+                    onClick = {
+                        if (dotNetRuntimeOptions.isNotEmpty()) {
+                            showDotNetRuntimeDialog = true
+                        }
                     }
                 )
             }
@@ -570,6 +600,18 @@ private fun GameSettingsPane(
             }
         }
 
+        if (showDotNetRuntimeDialog) {
+            DotNetRuntimeSelectDialog(
+                currentRuntimeVersion = currentDotNetRuntimeVersion,
+                runtimes = dotNetRuntimeOptions,
+                onSelect = { version ->
+                    viewModel.onEvent(SettingsEvent.SetDotNetRuntimeVersion(version))
+                    showDotNetRuntimeDialog = false
+                },
+                onDismiss = { showDotNetRuntimeDialog = false }
+            )
+        }
+
         if (showRendererDialog) {
             RendererSelectDialog(
                 currentRenderer = rendererType,
@@ -586,17 +628,19 @@ private fun GameSettingsPane(
 
 @Composable
 private fun LauncherSettingsPane(
+    navState: NavState,
     viewModel: SettingsViewModel,
     uiState: SettingsUiState,
     assetStatusSummaryState: MutableState<String>
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var showPatchManagementDialog by remember { mutableStateOf(false) }
     var showMultiplayerDisclaimerDialog by remember { mutableStateOf(false) }
     var showAssetCheckDialog by remember { mutableStateOf(false) }
+    var showForceAssetReinstallDialog by remember { mutableStateOf(false) }
     var assetCheckResult by remember { mutableStateOf<AssetIntegrityChecker.CheckResult?>(null) }
     var isCheckingAssets by remember { mutableStateOf(false) }
+    var isForceReinstallingAssets by remember { mutableStateOf(false) }
     val assetStatusSummary = assetStatusSummaryState.value
 
     SettingsPaneColumn {
@@ -632,6 +676,15 @@ private fun LauncherSettingsPane(
                     }
                 }
             )
+
+            SettingsDivider()
+
+            ClickableSettingItem(
+                title = androidStringResource(R.string.settings_reextract_runtime_title),
+                subtitle = androidStringResource(R.string.settings_launcher_reextract_runtime_subtitle),
+                icon = Icons.Default.Refresh,
+                onClick = { showForceAssetReinstallDialog = true }
+            )
         }
 
         SettingsSection(title = androidStringResource(R.string.multiplayer_settings)) {
@@ -659,7 +712,7 @@ private fun LauncherSettingsPane(
                 title = androidStringResource(R.string.patch_management),
                 subtitle = androidStringResource(R.string.patch_management_desc),
                 icon = Icons.Default.Extension,
-                onClick = { showPatchManagementDialog = true }
+                onClick = { navState.navigateToPatchManagement() }
             )
 
             SettingsDivider()
@@ -671,12 +724,6 @@ private fun LauncherSettingsPane(
                 onClick = { forceReinstallPatches(context) }
             )
         }
-    }
-
-    if (showPatchManagementDialog) {
-        PatchManagementDialogCompose(
-            onDismiss = { showPatchManagementDialog = false }
-        )
     }
 
     if (showMultiplayerDisclaimerDialog) {
@@ -691,6 +738,35 @@ private fun LauncherSettingsPane(
                 ).show()
             },
             onDismiss = { showMultiplayerDisclaimerDialog = false }
+        )
+    }
+
+    if (showForceAssetReinstallDialog) {
+        ForceAssetReinstallDialog(
+            isReinstalling = isForceReinstallingAssets,
+            onConfirm = {
+                scope.launch {
+                    isForceReinstallingAssets = true
+                    val fixResult = AssetIntegrityChecker.forceReinstall(context)
+                    isForceReinstallingAssets = false
+                    assetStatusSummaryState.value = AssetIntegrityChecker.getStatusSummary(context)
+
+                    if (fixResult.success) {
+                        showForceAssetReinstallDialog = false
+                        Toast.makeText(context, fixResult.message, Toast.LENGTH_LONG).show()
+                    } else {
+                        Toast.makeText(
+                            context,
+                            context.getString(
+                                R.string.settings_fix_failed,
+                                fixResult.errors.firstOrNull() ?: fixResult.message
+                            ),
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
+            },
+            onDismiss = { showForceAssetReinstallDialog = false }
         )
     }
 
@@ -734,13 +810,12 @@ private fun LauncherSettingsPane(
 
 @Composable
 private fun DeveloperSettingsPane(
+    navState: NavState,
     viewModel: SettingsViewModel,
     uiState: SettingsUiState
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var logs by remember { mutableStateOf<List<String>>(emptyList()) }
-    var showLogViewerDialog by remember { mutableStateOf(false) }
     val logExportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("text/plain")
     ) { uri ->
@@ -778,10 +853,7 @@ private fun DeveloperSettingsPane(
                     title = androidStringResource(R.string.settings_developer_view_logs_title),
                     subtitle = androidStringResource(R.string.settings_developer_view_logs_subtitle),
                     icon = Icons.Default.Visibility,
-                    onClick = {
-                        logs = loadLogs(context)
-                        showLogViewerDialog = true
-                    }
+                    onClick = { navState.navigateToLogViewer() }
                 )
 
                 SettingsDivider()
@@ -916,22 +988,6 @@ private fun DeveloperSettingsPane(
             }
         }
 
-        if (showLogViewerDialog) {
-            LogViewerDialog(
-                logs = logs,
-                onExport = { logExportLauncher.launch(buildLogFileName()) },
-                onClear = {
-                    clearLogs(context)
-                    logs = emptyList()
-                    Toast.makeText(
-                        context,
-                        context.getString(R.string.settings_logs_cleared),
-                        Toast.LENGTH_SHORT
-                    ).show()
-                },
-                onDismiss = { showLogViewerDialog = false }
-            )
-        }
     }
 }
 

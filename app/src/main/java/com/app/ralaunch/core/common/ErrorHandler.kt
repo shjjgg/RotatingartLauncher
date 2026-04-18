@@ -15,7 +15,7 @@ import com.app.ralaunch.RaLaunchApp
 import com.app.ralaunch.core.common.util.AppLogger
 import com.app.ralaunch.core.common.util.ErrorDialog
 import com.app.ralaunch.core.common.util.LocaleManager
-import com.app.ralaunch.feature.crash.CrashReportActivity
+import com.app.ralaunch.feature.crash.ui.CrashReportActivity
 import java.io.PrintWriter
 import java.io.StringWriter
 import java.lang.ref.WeakReference

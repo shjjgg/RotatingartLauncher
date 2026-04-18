@@ -1,4 +1,4 @@
-package com.app.ralaunch.feature.controls
+package com.app.ralaunch.feature.controls.ui
 
 import android.util.Log
 import androidx.compose.foundation.background

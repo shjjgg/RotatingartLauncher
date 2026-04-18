@@ -1,29 +1,49 @@
 package com.app.ralaunch.core.di
 
+import android.content.Context
+import android.content.SharedPreferences
 import androidx.activity.ComponentActivity
 import androidx.appcompat.app.AppCompatActivity
-import com.app.ralaunch.core.di.contract.GameListStorage
-import com.app.ralaunch.core.di.contract.GameRepositoryV2
-import com.app.ralaunch.core.di.contract.IThemeManager
-import com.app.ralaunch.core.di.contract.IVibrationManager
-import com.app.ralaunch.core.di.contract.SettingsRepositoryV2
-import com.app.ralaunch.core.di.service.AndroidGameListStorage
-import com.app.ralaunch.core.di.service.GameDeletionManager
-import com.app.ralaunch.core.di.service.GameRepositoryImpl
-import com.app.ralaunch.core.di.service.PermissionManager
-import com.app.ralaunch.core.di.service.SettingsRepositoryImpl
-import com.app.ralaunch.core.di.service.StoragePathsProvider
-import com.app.ralaunch.core.di.service.ThemeManager
-import com.app.ralaunch.core.di.service.VibrationManager
+import com.app.ralaunch.core.common.GameLaunchManager
+import com.app.ralaunch.core.di.contract.IGameRepositoryServiceV3
+import com.app.ralaunch.core.di.contract.IRuntimeManagerServiceV2
+import com.app.ralaunch.core.di.contract.ISettingsRepositoryServiceV2
+import com.app.ralaunch.core.di.contract.IThemeManagerServiceV1
+import com.app.ralaunch.core.di.service.GameRepositoryServiceV3
+import com.app.ralaunch.core.di.service.PermissionManagerServiceV1
+import com.app.ralaunch.core.di.service.RuntimeManagerServiceV2
+import com.app.ralaunch.core.di.service.SettingsRepositoryServiceV2
+import com.app.ralaunch.core.di.service.StoragePathsProviderServiceV1
+import com.app.ralaunch.core.di.service.ThemeManagerServiceV1
+import com.app.ralaunch.core.di.service.VibrationManagerServiceV1
+import com.app.ralaunch.core.platform.AppConstants
 import com.app.ralaunch.feature.announcement.AnnouncementRepositoryService
+import com.app.ralaunch.feature.announcement.vm.AnnouncementViewModel
+import com.app.ralaunch.feature.controls.editors.vm.ControlEditorViewModel
 import com.app.ralaunch.feature.controls.packs.ControlPackManager
+import com.app.ralaunch.feature.controls.packs.ControlPackRepositoryService
+import com.app.ralaunch.feature.controls.packs.vm.ControlPackViewModel
+import com.app.ralaunch.feature.controls.vm.ControlLayoutViewModel
+import com.app.ralaunch.feature.filebrowser.vm.FileBrowserViewModel
+import com.app.ralaunch.feature.gog.data.GogDownloader
+import com.app.ralaunch.feature.gog.data.api.GogAuthClient
+import com.app.ralaunch.feature.gog.data.api.GogWebsiteApi
+import com.app.ralaunch.feature.gog.domain.ModLoaderConfigManager
+import com.app.ralaunch.feature.gog.vm.GogViewModel
+import com.app.ralaunch.feature.init.vm.InitializationViewModel
+import com.app.ralaunch.feature.installer.vm.InstallerViewModel
 import com.app.ralaunch.feature.main.update.LauncherUpdateChecker
+import com.app.ralaunch.feature.main.vm.MainViewModel
+import com.app.ralaunch.feature.main.vm.GameInfoEditViewModel
 import com.app.ralaunch.feature.patch.data.PatchManager
-import com.app.ralaunch.feature.settings.AppInfo
-import com.app.ralaunch.feature.settings.SettingsViewModel
+import com.app.ralaunch.feature.patch.vm.PatchManagementViewModel
+import com.app.ralaunch.feature.script.JavaScriptExecutor
+import com.app.ralaunch.feature.settings.vm.AppInfo
+import com.app.ralaunch.feature.settings.vm.SettingsViewModel
+import com.app.ralaunch.feature.sponsor.SponsorRepositoryService
+import com.app.ralaunch.feature.sponsor.vm.SponsorsViewModel
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModel
-import org.koin.dsl.bind
 import org.koin.dsl.module
 
 /**
@@ -35,22 +55,29 @@ val appModule = module {
 
     // ==================== 数据存储 ====================
 
-    single<StoragePathsProvider> {
-        StoragePathsProvider(androidContext())
-    }
-
-    single<GameListStorage> {
-        AndroidGameListStorage(get())
+    single<StoragePathsProviderServiceV1> {
+        StoragePathsProviderServiceV1(androidContext())
     }
 
     // ==================== Repositories ====================
 
-    single<GameRepositoryV2> {
-        GameRepositoryImpl(gameListStorage = get())
+    single<IGameRepositoryServiceV3> {
+        GameRepositoryServiceV3(pathsProvider = get())
     }
 
-    single<SettingsRepositoryV2> {
-        SettingsRepositoryImpl(storagePathsProvider = get())
+    single<ISettingsRepositoryServiceV2> {
+        SettingsRepositoryServiceV2(storagePathsProvider = get())
+    }
+
+    single<IRuntimeManagerServiceV2> {
+        RuntimeManagerServiceV2(
+            settingsRepository = get(),
+            pathsProvider = get()
+        )
+    }
+
+    single<SharedPreferences> {
+        androidContext().getSharedPreferences(AppConstants.PREFS_NAME, Context.MODE_PRIVATE)
     }
 
     // ==================== App Info ====================
@@ -59,12 +86,7 @@ val appModule = module {
         try {
             val context = androidContext()
             val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-            val versionCode = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
-                packageInfo.longVersionCode
-            } else {
-                @Suppress("DEPRECATION")
-                packageInfo.versionCode.toLong()
-            }
+            val versionCode = packageInfo.longVersionCode
             AppInfo(
                 versionName = packageInfo.versionName ?: versionCode.toString(),
                 versionCode = versionCode
@@ -77,8 +99,8 @@ val appModule = module {
     // ==================== Managers ====================
 
     single {
-        VibrationManager(androidContext())
-    } bind IVibrationManager::class
+        VibrationManagerServiceV1(androidContext())
+    }
 
     single {
         ControlPackManager(androidContext())
@@ -92,6 +114,18 @@ val appModule = module {
         LauncherUpdateChecker(androidContext())
     }
 
+    single {
+        ControlPackRepositoryService(androidContext())
+    }
+
+    single {
+        GameLaunchManager(androidContext())
+    }
+
+    single {
+        JavaScriptExecutor()
+    }
+
     single<PatchManager?> {
         try {
             PatchManager(null, false)
@@ -100,31 +134,138 @@ val appModule = module {
         }
     }
 
+    single {
+        GogAuthClient(androidContext())
+    }
+
+    single {
+        GogWebsiteApi(get())
+    }
+
+    single {
+        GogDownloader(get())
+    }
+
+    single {
+        ModLoaderConfigManager(androidContext())
+    }
+
+    single {
+        SponsorRepositoryService(androidContext())
+    }
+
     // ==================== ViewModels ====================
 
     viewModel {
         SettingsViewModel(
-            settingsRepository = get<SettingsRepositoryV2>(),
+            settingsRepository = get<ISettingsRepositoryServiceV2>(),
+            runtimeManager = get(),
             appInfo = getOrNull<AppInfo>() ?: AppInfo()
+        )
+    }
+
+    viewModel {
+        MainViewModel(
+            appContext = androidContext(),
+            gameRepository = get(),
+            gameLaunchManager = get(),
+            settingsRepository = get(),
+            announcementRepositoryService = get(),
+            launcherUpdateChecker = get()
+        )
+    }
+
+    viewModel {
+        GameInfoEditViewModel(
+            runtimeManager = get()
+        )
+    }
+
+    viewModel {
+        InstallerViewModel(
+            appContext = androidContext(),
+            gameRepository = get()
+        )
+    }
+
+    viewModel {
+        AnnouncementViewModel(
+            appContext = androidContext(),
+            repositoryService = get()
+        )
+    }
+
+    viewModel {
+        ControlPackViewModel(
+            packManager = get(),
+            repoService = get(),
+            context = androidContext()
+        )
+    }
+
+    viewModel {
+        ControlEditorViewModel(
+            appContext = androidContext(),
+            packManager = get()
+        )
+    }
+
+    viewModel {
+        FileBrowserViewModel()
+    }
+
+    viewModel {
+        GogViewModel(
+            appContext = androidContext(),
+            authClient = get(),
+            websiteApi = get(),
+            downloader = get(),
+            modLoaderConfigManager = get()
+        )
+    }
+
+    viewModel {
+        InitializationViewModel(
+            appContext = androidContext(),
+            prefs = get(),
+            runtimeManager = get()
+        )
+    }
+
+    viewModel {
+        ControlLayoutViewModel(
+            appContext = androidContext(),
+            packManager = get()
+        )
+    }
+
+    viewModel {
+        PatchManagementViewModel(
+            appContext = androidContext(),
+            gameRepository = get(),
+            patchManager = getOrNull()
+        )
+    }
+
+    viewModel {
+        SponsorsViewModel(
+            appContext = androidContext(),
+            sponsorService = get()
         )
     }
 
     // ==================== UI Managers (参数化工厂) ====================
 
-    factory<ThemeManager> { (activity: AppCompatActivity) ->
-        ThemeManager(activity)
+    factory<ThemeManagerServiceV1> { (activity: AppCompatActivity) ->
+        ThemeManagerServiceV1(activity)
     }
 
-    factory<IThemeManager> { (activity: AppCompatActivity) ->
-        ThemeManager(activity)
+    factory<IThemeManagerServiceV1> { (activity: AppCompatActivity) ->
+        ThemeManagerServiceV1(activity)
     }
 
-    factory<PermissionManager> { (activity: ComponentActivity) ->
-        PermissionManager(activity)
-    }
-
-    factory<GameDeletionManager> { (activity: AppCompatActivity) ->
-        GameDeletionManager(activity)
+    factory<PermissionManagerServiceV1> { (activity: ComponentActivity) ->
+        PermissionManagerServiceV1(activity)
     }
 }
 

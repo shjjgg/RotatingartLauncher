@@ -1,4 +1,4 @@
-package com.app.ralaunch.feature.controls.views
+package com.app.ralaunch.feature.controls.ui
 
 import android.content.Context
 import android.graphics.Canvas
@@ -12,7 +12,7 @@ import android.view.MotionEvent
 import android.view.View
 import com.app.ralaunch.feature.controls.ControlData
 import com.app.ralaunch.feature.controls.bridges.ControlInputBridge
-import com.app.ralaunch.feature.controls.views.ControlView
+import com.app.ralaunch.feature.controls.ui.ControlView
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sqrt

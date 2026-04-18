@@ -5,11 +5,10 @@ import android.content.SharedPreferences
 import com.app.ralaunch.core.platform.AppConstants
 import com.app.ralaunch.R
 import com.app.ralaunch.core.model.GameItem
-import com.app.ralaunch.core.di.contract.GameRepositoryV2
+import com.app.ralaunch.core.di.contract.IGameRepositoryServiceV3
 import com.app.ralaunch.core.model.GameItemUi
 import com.app.ralaunch.core.model.applyFromUiModel
 import com.app.ralaunch.core.common.GameLaunchManager
-import com.app.ralaunch.core.di.service.GameDeletionManager
 import com.app.ralaunch.core.ui.BasePresenter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -38,9 +37,8 @@ class MainPresenter(
     }
 
     // 通过 Koin 获取 GameRepository
-    private val gameRepository: GameRepositoryV2 = get(GameRepositoryV2::class.java)
+    private val gameRepository: IGameRepositoryServiceV3 = get(IGameRepositoryServiceV3::class.java)
     private val gameLaunchManager: GameLaunchManager = GameLaunchManager(context)
-    private val gameDeletionManager: GameDeletionManager = GameDeletionManager(context)
     
     private val presenterScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     
@@ -197,8 +195,6 @@ class MainPresenter(
     }
 
     // ==================== 工具方法 ====================
-
-    fun getGameDeletionManager(): GameDeletionManager = gameDeletionManager
 
     fun getGameLaunchManager(): GameLaunchManager = gameLaunchManager
 }

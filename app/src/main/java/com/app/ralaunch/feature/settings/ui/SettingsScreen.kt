@@ -1,4 +1,4 @@
-package com.app.ralaunch.feature.settings
+package com.app.ralaunch.feature.settings.ui
 
 import androidx.annotation.StringRes
 import androidx.compose.animation.*

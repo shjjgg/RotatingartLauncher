@@ -1,4 +1,4 @@
-package com.app.ralaunch.feature.crash
+package com.app.ralaunch.feature.crash.ui
 
 import android.content.Intent
 import android.content.pm.ActivityInfo

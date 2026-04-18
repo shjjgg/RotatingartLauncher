@@ -1,4 +1,4 @@
-package com.app.ralaunch.feature.controls.editors
+package com.app.ralaunch.feature.controls.editors.ui
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -10,17 +10,16 @@ import android.view.View
 import android.view.WindowManager
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import com.app.ralaunch.feature.controls.editors.ui.ControlEditorScreen
+import com.app.ralaunch.feature.controls.editors.vm.ControlEditorViewModel
 import com.app.ralaunch.core.theme.AppThemeState
 import com.app.ralaunch.core.theme.RaLaunchTheme
 import com.app.ralaunch.feature.controls.packs.ControlPackManager
-import org.koin.java.KoinJavaComponent
 import com.app.ralaunch.core.common.SettingsAccess
 import com.app.ralaunch.core.common.DynamicColorManager
 import com.app.ralaunch.feature.controls.textures.TextureLoader
@@ -29,6 +28,8 @@ import com.app.ralaunch.core.common.util.LocaleManager
 import com.app.ralaunch.core.model.ThemeMode
 import java.io.File
 import java.io.FileOutputStream
+import org.koin.android.ext.android.inject
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 /**
  * 控件编辑器 Activity
@@ -52,10 +53,8 @@ class ControlEditorActivity : AppCompatActivity() {
         }
     }
 
-    private val viewModel: ControlEditorViewModel by viewModels()
-    private val packManager: ControlPackManager by lazy {
-        KoinJavaComponent.get(ControlPackManager::class.java)
-    }
+    private val viewModel: ControlEditorViewModel by viewModel()
+    private val packManager: ControlPackManager by inject()
 
     // 图片选择器
     private val pickImageLauncher = registerForActivityResult(

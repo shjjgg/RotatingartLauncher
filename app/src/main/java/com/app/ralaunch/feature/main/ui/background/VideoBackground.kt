@@ -1,4 +1,4 @@
-package com.app.ralaunch.feature.main.background
+package com.app.ralaunch.feature.main.ui.background
 
 import android.view.ViewGroup
 import android.widget.FrameLayout
@@ -13,7 +13,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.viewinterop.AndroidView
 import coil.compose.AsyncImage
-import com.app.ralaunch.feature.main.background.view.VideoBackgroundView
+import com.app.ralaunch.feature.main.ui.background.VideoBackgroundView
 import java.io.File
 
 /**

@@ -1,4 +1,4 @@
-package com.app.ralaunch.feature.main.screens
+package com.app.ralaunch.feature.controls.ui
 
 import android.net.Uri
 import android.widget.Toast
@@ -9,31 +9,40 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.app.ralaunch.R
-import com.app.ralaunch.feature.controls.editors.ControlEditorActivity
-import org.koin.java.KoinJavaComponent
+import com.app.ralaunch.feature.controls.editors.ui.ControlEditorActivity
 import com.app.ralaunch.feature.controls.packs.ControlPackInfo
 import com.app.ralaunch.feature.controls.packs.ControlPackManager
 import com.app.ralaunch.core.ui.component.AnchoredActionItem
 import com.app.ralaunch.core.ui.component.AnchoredActionMenu
 import com.app.ralaunch.core.ui.component.AnchoredActionMenuStyle
-import java.io.File
+import com.app.ralaunch.feature.controls.vm.ControlLayoutViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
 
 /**
  * 控制布局管理 Screen - 纯 Composable 版本
@@ -46,29 +55,10 @@ fun ControlLayoutScreenWrapper(
     onOpenStore: () -> Unit = {}
 ) {
     val context = LocalContext.current
-    val packManager = remember { KoinJavaComponent.get<ControlPackManager>(ControlPackManager::class.java) }
-
-    // 状态
-    var layouts by remember { mutableStateOf<List<ControlPackInfo>>(emptyList()) }
-    var selectedPackId by remember { mutableStateOf<String?>(null) }
-    var quickSwitchIds by remember { mutableStateOf<List<String>>(emptyList()) }
-    var showCreateDialog by remember { mutableStateOf(false) }
-    var showDeleteDialog by remember { mutableStateOf<ControlPackInfo?>(null) }
-    var showRenameDialog by remember { mutableStateOf<ControlPackInfo?>(null) }
-    var showMoreMenu by remember { mutableStateOf<ControlPackInfo?>(null) }
+    val packManager: ControlPackManager = koinInject()
+    val viewModel: ControlLayoutViewModel = koinViewModel()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var exportingPackId by remember { mutableStateOf<String?>(null) }
-
-    // 加载布局列表
-    fun loadLayouts() {
-        layouts = packManager.getInstalledPacks()
-        selectedPackId = packManager.getSelectedPackId()
-        quickSwitchIds = packManager.getQuickSwitchPackIds()
-    }
-
-    // 初始加载
-    LaunchedEffect(Unit) {
-        loadLayouts()
-    }
 
     // Activity Result Launchers
     val exportLauncher = rememberLauncherForActivityResult(
@@ -77,6 +67,7 @@ fun ControlLayoutScreenWrapper(
         uri?.let { exportUri ->
             exportingPackId?.let { packId ->
                 exportPackToZip(context, packManager, exportUri, packId)
+                viewModel.loadLayouts()
             }
         }
         exportingPackId = null
@@ -86,131 +77,76 @@ fun ControlLayoutScreenWrapper(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
         uri?.let { 
-            importPackFromUri(context, packManager, it) { loadLayouts() }
-        }
-    }
-
-    // 创建新布局
-    fun createNewLayout(name: String) {
-        if (name.isBlank()) return
-
-        if (layouts.any { it.name.equals(name, ignoreCase = true) }) {
-            Toast.makeText(context, context.getString(R.string.control_layout_name_exists), Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        val newPack = packManager.createPack(name)
-
-        if (selectedPackId == null) {
-            packManager.setSelectedPackId(newPack.id)
-        }
-
-        showCreateDialog = false
-        loadLayouts()
-        ControlEditorActivity.start(context, newPack.id)
-    }
-
-    // 设为默认
-    fun setDefaultLayout(pack: ControlPackInfo) {
-        packManager.setSelectedPackId(pack.id)
-        selectedPackId = pack.id
-        Toast.makeText(context, context.getString(R.string.control_set_as_default), Toast.LENGTH_SHORT).show()
-    }
-
-    // 重命名
-    fun renameLayout(pack: ControlPackInfo, newName: String) {
-        if (newName.isBlank()) return
-
-        if (layouts.any { it.id != pack.id && it.name.equals(newName, ignoreCase = true) }) {
-            Toast.makeText(context, context.getString(R.string.control_layout_name_exists), Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        packManager.renamePack(pack.id, newName)
-        showRenameDialog = null
-        loadLayouts()
-    }
-
-    // 删除
-    fun deleteLayout(pack: ControlPackInfo) {
-        packManager.deletePack(pack.id)
-
-        if (selectedPackId == pack.id) {
-            val remaining = packManager.getInstalledPacks()
-            packManager.setSelectedPackId(remaining.firstOrNull()?.id)
-        }
-
-        showDeleteDialog = null
-        loadLayouts()
-        Toast.makeText(context, context.getString(R.string.control_layout_deleted), Toast.LENGTH_SHORT).show()
-    }
-
-    // 预览状态
-    var showPreviewDialog by remember { mutableStateOf<ControlPackInfo?>(null) }
-    
-    // 获取预览图路径
-    fun getPreviewImages(pack: ControlPackInfo): List<File> {
-        val packDir = packManager.getPackDir(pack.id)
-        return if (pack.previewImagePaths.isNotEmpty()) {
-            pack.previewImagePaths.mapNotNull { path ->
-                val file = File(packDir, path)
-                if (file.exists()) file else null
-            }
-        } else {
-            // 尝试默认 preview.jpg/png
-            listOf("preview.jpg", "preview.png", "preview.webp").mapNotNull { name ->
-                val file = File(packDir, name)
-                if (file.exists()) file else null
-            }
+            importPackFromUri(context, packManager, it) { viewModel.loadLayouts() }
         }
     }
 
     // UI
     ControlLayoutScreen(
-        layouts = layouts,
-        selectedPackId = selectedPackId,
-        quickSwitchIds = quickSwitchIds,
-        showCreateDialog = showCreateDialog,
-        showDeleteDialog = showDeleteDialog,
-        showRenameDialog = showRenameDialog,
-        showMoreMenu = showMoreMenu,
+        layouts = uiState.layouts,
+        selectedPackId = uiState.selectedPackId,
+        quickSwitchIds = uiState.quickSwitchIds,
+        selectedLayout = uiState.selectedLayout,
+        showCreateDialog = uiState.showCreateDialog,
+        showDeleteDialog = uiState.deleteDialogPack,
+        showRenameDialog = uiState.renameDialogPack,
+        showMoreMenu = uiState.moreMenuPack,
         onBack = onBack,
         onOpenStore = onOpenStore,
-        onCreateClick = { showCreateDialog = true },
-        onCreateConfirm = { createNewLayout(it) },
-        onCreateDismiss = { showCreateDialog = false },
-        onLayoutClick = { pack -> ControlEditorActivity.start(context, pack.id) },
-        onSetDefault = { setDefaultLayout(it) },
-        onToggleQuickSwitch = { packId, enabled ->
-            if (enabled) packManager.addToQuickSwitch(packId)
-            else packManager.removeFromQuickSwitch(packId)
-            quickSwitchIds = packManager.getQuickSwitchPackIds()
+        onLayoutSelect = viewModel::selectLayout,
+        onCreateClick = viewModel::showCreateDialog,
+        onCreateConfirm = { name ->
+            viewModel.createNewLayout(name)
+                .onSuccess { newPack ->
+                    ControlEditorActivity.start(context, newPack.id)
+                }
+                .onFailure { error ->
+                    Toast.makeText(context, error.message ?: "", Toast.LENGTH_SHORT).show()
+                }
         },
-        onShowMoreMenu = { showMoreMenu = it },
-        onDismissMoreMenu = { showMoreMenu = null },
-        onRenameClick = { showRenameDialog = it; showMoreMenu = null },
-        onRenameConfirm = { pack, name -> renameLayout(pack, name) },
-        onRenameDismiss = { showRenameDialog = null },
-        onDeleteClick = { showDeleteDialog = it; showMoreMenu = null },
-        onDeleteConfirm = { deleteLayout(it) },
-        onDeleteDismiss = { showDeleteDialog = null },
+        onCreateDismiss = viewModel::dismissCreateDialog,
+        onLayoutClick = { pack -> ControlEditorActivity.start(context, pack.id) },
+        onSetDefault = {
+            viewModel.setDefaultLayout(it)
+            Toast.makeText(context, context.getString(R.string.control_set_as_default), Toast.LENGTH_SHORT).show()
+        },
+        onToggleQuickSwitch = { packId, enabled ->
+            viewModel.toggleQuickSwitch(packId, enabled)
+        },
+        onShowMoreMenu = viewModel::showMoreMenu,
+        onDismissMoreMenu = viewModel::dismissMoreMenu,
+        onRenameClick = viewModel::showRenameDialog,
+        onRenameConfirm = { pack, name ->
+            viewModel.renameLayout(pack, name)
+                .onFailure { error ->
+                    Toast.makeText(context, error.message ?: "", Toast.LENGTH_SHORT).show()
+                }
+        },
+        onRenameDismiss = viewModel::dismissRenameDialog,
+        onDeleteClick = viewModel::showDeleteDialog,
+        onDeleteConfirm = {
+            if (viewModel.deleteLayout(it)) {
+                Toast.makeText(context, context.getString(R.string.control_layout_deleted), Toast.LENGTH_SHORT).show()
+            }
+        },
+        onDeleteDismiss = viewModel::dismissDeleteDialog,
         onExportClick = { pack ->
             exportingPackId = pack.id
             exportLauncher.launch("${pack.name}.zip")
-            showMoreMenu = null
+            viewModel.dismissMoreMenu()
         },
         onImportClick = { importLauncher.launch(arrayOf("application/zip")) },
-        onPreviewClick = { showPreviewDialog = it }
+        onPreviewClick = viewModel::showPreview
     )
     
     // 本地布局预览对话框
-    showPreviewDialog?.let { pack ->
+    uiState.previewPack?.let { pack ->
         LocalLayoutPreviewDialog(
             pack = pack,
-            previewImages = getPreviewImages(pack),
-            onDismiss = { showPreviewDialog = null },
+            previewImages = viewModel.getPreviewImages(pack),
+            onDismiss = viewModel::dismissPreview,
             onEditClick = { 
-                showPreviewDialog = null
+                viewModel.dismissPreview()
                 ControlEditorActivity.start(context, pack.id)
             }
         )
@@ -224,12 +160,14 @@ private fun ControlLayoutScreen(
     layouts: List<ControlPackInfo>,
     selectedPackId: String?,
     quickSwitchIds: List<String>,
+    selectedLayout: ControlPackInfo?,
     showCreateDialog: Boolean,
     showDeleteDialog: ControlPackInfo?,
     showRenameDialog: ControlPackInfo?,
     showMoreMenu: ControlPackInfo?,
     onBack: () -> Unit,
     onOpenStore: () -> Unit,
+    onLayoutSelect: (ControlPackInfo) -> Unit,
     onCreateClick: () -> Unit,
     onCreateConfirm: (String) -> Unit,
     onCreateDismiss: () -> Unit,
@@ -249,16 +187,6 @@ private fun ControlLayoutScreen(
     onPreviewClick: (ControlPackInfo) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // 当前选中的布局（用于右侧详情面板）
-    var selectedLayout by remember { mutableStateOf<ControlPackInfo?>(null) }
-    
-    // 初始选中默认布局
-    LaunchedEffect(layouts, selectedPackId) {
-        if (selectedLayout == null || layouts.none { it.id == selectedLayout?.id }) {
-            selectedLayout = layouts.find { it.id == selectedPackId } ?: layouts.firstOrNull()
-        }
-    }
-
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -273,7 +201,7 @@ private fun ControlLayoutScreen(
                 quickSwitchIds = quickSwitchIds,
                 selectedLayout = selectedLayout,
                 showMoreMenu = showMoreMenu,
-                onLayoutSelect = { selectedLayout = it },
+                onLayoutSelect = onLayoutSelect,
                 onLayoutClick = onLayoutClick,
                 onSetDefault = onSetDefault,
                 onShowMoreMenu = onShowMoreMenu,
@@ -694,191 +622,203 @@ private fun LayoutDetailPanel(
             if (currentLayout != null) {
                 val isDefault = currentLayout.id == selectedPackId
                 val isQuickSwitch = currentLayout.id in quickSwitchIds
+                val detailScrollState = rememberScrollState()
 
                 Column(
                     modifier = Modifier.fillMaxSize()
                 ) {
-                // 布局信息
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        modifier = Modifier.size(64.dp)
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .verticalScroll(detailScrollState),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                Icons.Default.TouchApp,
-                                null,
-                                modifier = Modifier.size(32.dp),
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.width(16.dp))
-
-                    Column(modifier = Modifier.weight(1f)) {
+                        // 布局信息
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = currentLayout.name,
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold
-                            )
-                            if (isDefault) {
-                                Spacer(modifier = Modifier.width(8.dp))
-                                AssistChip(
-                                    onClick = {},
-                                    label = { Text(stringResource(R.string.layout_default_tag)) },
-                                    leadingIcon = {
-                                        Icon(
-                                            Icons.Default.Star,
-                                            null,
-                                            modifier = Modifier.size(14.dp)
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                modifier = Modifier.size(64.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        Icons.Default.TouchApp,
+                                        null,
+                                        modifier = Modifier.size(32.dp),
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.width(16.dp))
+
+                            Column(modifier = Modifier.weight(1f)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = currentLayout.name,
+                                        style = MaterialTheme.typography.titleLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.weight(1f, fill = false)
+                                    )
+                                    if (isDefault) {
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        AssistChip(
+                                            onClick = {},
+                                            label = { Text(stringResource(R.string.layout_default_tag)) },
+                                            leadingIcon = {
+                                                Icon(
+                                                    Icons.Default.Star,
+                                                    null,
+                                                    modifier = Modifier.size(14.dp)
+                                                )
+                                            }
                                         )
                                     }
+                                }
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = currentLayout.author.ifBlank { stringResource(R.string.control_layout_custom_author) },
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = currentLayout.author.ifBlank { stringResource(R.string.control_layout_custom_author) },
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
 
-                if (currentLayout.description.isNotBlank()) {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = currentLayout.description,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                // 快速切换开关
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerLow,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.SwapHoriz,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp),
-                            tint = if (isQuickSwitch) MaterialTheme.colorScheme.primary
-                                   else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Column(modifier = Modifier.weight(1f)) {
+                        if (currentLayout.description.isNotBlank()) {
                             Text(
-                                text = stringResource(R.string.control_layout_quick_switch_title),
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Medium
-                            )
-                            Text(
-                                text = stringResource(R.string.control_layout_quick_switch_subtitle),
+                                text = currentLayout.description,
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
                             )
                         }
-                        Switch(
-                            checked = isQuickSwitch,
-                            onCheckedChange = onToggleQuickSwitch
-                        )
-                    }
-                }
 
-                Spacer(modifier = Modifier.weight(1f))
-
-                // 操作按钮（窄屏自适应为两行，避免文字换行）
-                BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-                    val buttonPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp)
-                    val useTwoRows = !isDefault && maxWidth < 560.dp
-
-                    if (useTwoRows) {
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        // 快速切换开关
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.surfaceContainerLow,
+                            modifier = Modifier.fillMaxWidth()
                         ) {
                             Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                OutlinedButton(
-                                    onClick = onPreviewClick,
-                                    modifier = Modifier.weight(1f),
-                                    contentPadding = buttonPadding
-                                ) {
-                                    Icon(Icons.Default.Visibility, null, modifier = Modifier.size(18.dp))
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text(stringResource(R.string.control_layout_preview), maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
+                                Icon(
+                                    Icons.Default.SwapHoriz,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp),
+                                    tint = if (isQuickSwitch) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = stringResource(R.string.control_layout_quick_switch_title),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    Text(
+                                        text = stringResource(R.string.control_layout_quick_switch_subtitle),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
                                 }
-                                OutlinedButton(
-                                    onClick = onSetDefault,
-                                    modifier = Modifier.weight(1f),
-                                    contentPadding = buttonPadding
-                                ) {
-                                    Icon(Icons.Default.Star, null, modifier = Modifier.size(18.dp))
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text(stringResource(R.string.action_set_default), maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
-                                }
-                            }
-                            Button(
-                                onClick = onEditClick,
-                                modifier = Modifier.fillMaxWidth(),
-                                contentPadding = buttonPadding
-                            ) {
-                                Icon(Icons.Default.Edit, null, modifier = Modifier.size(18.dp))
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(stringResource(R.string.control_layout_edit), maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
+                                Switch(
+                                    checked = isQuickSwitch,
+                                    onCheckedChange = onToggleQuickSwitch
+                                )
                             }
                         }
-                    } else {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            OutlinedButton(
-                                onClick = onPreviewClick,
-                                modifier = Modifier.weight(1f),
-                                contentPadding = buttonPadding
-                            ) {
-                                Icon(Icons.Default.Visibility, null, modifier = Modifier.size(18.dp))
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(stringResource(R.string.control_layout_preview), maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
-                            }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // 操作按钮：按实际文案宽度决定是一行还是纵向堆叠
+                    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                        val actionSpacing = 8.dp
+                        val buttonPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp)
+                        val textMeasurer = rememberTextMeasurer()
+                        val density = LocalDensity.current
+                        val buttonTextStyle = MaterialTheme.typography.labelLarge
+                        val actionSpecs = buildList {
+                            add(
+                                LayoutActionSpec(
+                                    icon = Icons.Default.Visibility,
+                                    label = stringResource(R.string.control_layout_preview),
+                                    onClick = onPreviewClick,
+                                    emphasized = false
+                                )
+                            )
                             if (!isDefault) {
-                                OutlinedButton(
-                                    onClick = onSetDefault,
-                                    modifier = Modifier.weight(1f),
-                                    contentPadding = buttonPadding
-                                ) {
-                                    Icon(Icons.Default.Star, null, modifier = Modifier.size(18.dp))
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text(stringResource(R.string.action_set_default), maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
+                                add(
+                                    LayoutActionSpec(
+                                        icon = Icons.Default.Star,
+                                        label = stringResource(R.string.action_set_default),
+                                        onClick = onSetDefault,
+                                        emphasized = false
+                                    )
+                                )
+                            }
+                            add(
+                                LayoutActionSpec(
+                                    icon = Icons.Default.Edit,
+                                    label = stringResource(R.string.control_layout_edit),
+                                    onClick = onEditClick,
+                                    emphasized = true
+                                )
+                            )
+                        }
+                        val horizontalInsetPx = with(density) {
+                            // button horizontal padding + icon + spacer + a small safety reserve
+                            (12.dp * 2 + 18.dp + 6.dp + 8.dp).roundToPx()
+                        }
+                        val spacingPx = with(density) { actionSpacing.roundToPx() }
+                        val availableWidthPx = with(density) { maxWidth.roundToPx() }
+                        val widestActionWidthPx = actionSpecs.maxOfOrNull { action ->
+                            textMeasurer.measure(
+                                text = AnnotatedString(action.label),
+                                style = buttonTextStyle,
+                                maxLines = 1
+                            ).size.width + horizontalInsetPx
+                        } ?: 0
+                        val useSingleRow = availableWidthPx >=
+                            (widestActionWidthPx * actionSpecs.size) + (spacingPx * (actionSpecs.size - 1))
+
+                        if (useSingleRow) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(actionSpacing)
+                            ) {
+                                actionSpecs.forEach { action ->
+                                    LayoutDetailActionButton(
+                                        action = action,
+                                        modifier = Modifier.weight(1f),
+                                        contentPadding = buttonPadding,
+                                        maxLines = 1
+                                    )
                                 }
                             }
-                            Button(
-                                onClick = onEditClick,
-                                modifier = Modifier.weight(1f),
-                                contentPadding = buttonPadding
+                        } else {
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalArrangement = Arrangement.spacedBy(actionSpacing)
                             ) {
-                                Icon(Icons.Default.Edit, null, modifier = Modifier.size(18.dp))
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(stringResource(R.string.control_layout_edit), maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
+                                actionSpecs.forEach { action ->
+                                    LayoutDetailActionButton(
+                                        action = action,
+                                        modifier = Modifier.fillMaxWidth(),
+                                        contentPadding = buttonPadding,
+                                        maxLines = 2
+                                    )
+                                }
                             }
                         }
                     }
                 }
-            }
             } else {
                 // 空状态
                 Box(
@@ -902,5 +842,70 @@ private fun LayoutDetailPanel(
                 }
             }
         }
+    }
+}
+
+private data class LayoutActionSpec(
+    val icon: ImageVector,
+    val label: String,
+    val onClick: () -> Unit,
+    val emphasized: Boolean
+)
+
+@Composable
+private fun LayoutDetailActionButton(
+    action: LayoutActionSpec,
+    modifier: Modifier,
+    contentPadding: PaddingValues,
+    maxLines: Int
+) {
+    if (action.emphasized) {
+        Button(
+            onClick = action.onClick,
+            modifier = modifier,
+            contentPadding = contentPadding
+        ) {
+            LayoutActionButtonContent(
+                icon = action.icon,
+                label = action.label,
+                maxLines = maxLines
+            )
+        }
+    } else {
+        OutlinedButton(
+            onClick = action.onClick,
+            modifier = modifier,
+            contentPadding = contentPadding
+        ) {
+            LayoutActionButtonContent(
+                icon = action.icon,
+                label = action.label,
+                maxLines = maxLines
+            )
+        }
+    }
+}
+
+@Composable
+private fun LayoutActionButtonContent(
+    icon: ImageVector,
+    label: String,
+    maxLines: Int = 1
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        Icon(icon, null, modifier = Modifier.size(18.dp))
+        Spacer(modifier = Modifier.width(6.dp))
+        Text(
+            text = label,
+            modifier = Modifier.weight(1f),
+            maxLines = maxLines,
+            softWrap = maxLines > 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center
+        )
     }
 }

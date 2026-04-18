@@ -1,4 +1,4 @@
-package com.app.ralaunch.feature.controls.editors
+package com.app.ralaunch.feature.controls.editors.ui
 
 import android.content.Context
 import android.util.TypedValue

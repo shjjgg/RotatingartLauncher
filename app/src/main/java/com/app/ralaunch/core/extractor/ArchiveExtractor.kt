@@ -3,6 +3,7 @@ package com.app.ralaunch.core.extractor
 import android.content.Context
 import android.system.Os
 import com.app.ralaunch.core.common.util.AppLogger
+import com.app.ralaunch.core.common.util.FileUtils
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
 import org.apache.commons.compress.compressors.xz.XZCompressorInputStream
 import java.io.BufferedInputStream
@@ -82,7 +83,7 @@ object ArchiveExtractor {
 
             when {
                 entry.isDirectory -> extractDirectory(targetFile)
-                entry.isSymbolicLink -> extractSymlink(targetFile, entry.linkName)
+                entry.isSymbolicLink -> extractSymlink(targetDir, targetFile, entry.linkName)
                 else -> extractFile(tarIn, targetFile, entry.mode)
             }
 
@@ -129,9 +130,11 @@ object ArchiveExtractor {
         if (!targetFile.exists()) targetFile.mkdirs()
     }
 
-    private fun extractSymlink(targetFile: File, linkTarget: String) {
+    private fun extractSymlink(targetDir: File, targetFile: File, linkTarget: String) {
         targetFile.parentFile?.takeIf { !it.exists() }?.mkdirs()
-        if (targetFile.exists()) targetFile.delete()
+        if (targetFile.exists()) {
+            FileUtils.deleteFileWithinRoot(targetFile, targetDir)
+        }
 
         try {
             Os.symlink(linkTarget, targetFile.absolutePath)

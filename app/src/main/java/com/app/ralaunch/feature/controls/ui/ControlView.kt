@@ -1,4 +1,4 @@
-package com.app.ralaunch.feature.controls.views
+package com.app.ralaunch.feature.controls.ui
 
 import com.app.ralaunch.feature.controls.ControlData
 import java.io.File

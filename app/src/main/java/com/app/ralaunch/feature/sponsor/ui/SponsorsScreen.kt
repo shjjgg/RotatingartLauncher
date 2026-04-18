@@ -1,4 +1,4 @@
-package com.app.ralaunch.feature.sponsor
+package com.app.ralaunch.feature.sponsor.ui
 
 import android.content.Intent
 import android.graphics.Color as AndroidColor
@@ -34,6 +34,12 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.ralaunch.R
+import com.app.ralaunch.feature.sponsor.Sponsor
+import com.app.ralaunch.feature.sponsor.SponsorRepository
+import com.app.ralaunch.feature.sponsor.SponsorRepositoryService
+import com.app.ralaunch.feature.sponsor.SponsorTier
+import com.app.ralaunch.feature.sponsor.vm.SponsorsUiState
+import com.app.ralaunch.feature.sponsor.vm.SponsorsViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
@@ -47,6 +53,7 @@ import nl.dionsegijn.konfetti.core.models.Size
 import nl.dionsegijn.konfetti.xml.KonfettiView
 import java.util.concurrent.TimeUnit
 import kotlin.random.Random
+import org.koin.compose.viewmodel.koinViewModel
 
 /**
  * 赞助商星空墙页面 - Compose 版本
@@ -58,32 +65,15 @@ fun SponsorsScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    
-    var uiState by remember { mutableStateOf<SponsorsUiState>(SponsorsUiState.Loading) }
+    val viewModel: SponsorsViewModel = koinViewModel()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var konfettiView by remember { mutableStateOf<KonfettiView?>(null) }
-    
-    val sponsorService = remember { SponsorRepositoryService(context) }
-    
-    // 加载赞助商数据
-    LaunchedEffect(Unit) {
-        val result = sponsorService.fetchSponsors(forceRefresh = true)
-        result.fold(
-            onSuccess = { repository ->
-                if (repository.sponsors.isEmpty()) {
-                    uiState = SponsorsUiState.Error(context.getString(R.string.sponsors_empty))
-                } else {
-                    uiState = SponsorsUiState.Success(repository)
-                    // 延迟播放入场动画
-                    delay(800)
-                    konfettiView?.let { playEntranceCelebration(it) }
-                }
-            },
-            onFailure = { error ->
-                uiState = SponsorsUiState.Error(
-                    context.getString(R.string.sponsors_error) + "\n" + error.message
-                )
-            }
-        )
+
+    LaunchedEffect(uiState) {
+        if (uiState is SponsorsUiState.Success) {
+            delay(800)
+            konfettiView?.let { playEntranceCelebration(it) }
+        }
     }
     
     Box(
@@ -94,23 +84,38 @@ fun SponsorsScreen(
         // 星空背景
         StarfieldBackground()
         
-        // Konfetti 效果层 (使用 AndroidView 包装)
-        AndroidView(
-            factory = { ctx ->
-                KonfettiView(ctx).also { view ->
-                    konfettiView = view
-                    // 启动星空效果
-                    startStarfieldEffect(view, scope)
-                }
-            },
-            modifier = Modifier.fillMaxSize()
-        )
-        
         // 主内容
-        Column(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            // 顶部标题栏
+        Box(modifier = Modifier.fillMaxSize()) {
+            when (val state = uiState) {
+                is SponsorsUiState.Loading -> {
+                    LoadingState()
+                }
+                is SponsorsUiState.Error -> {
+                    ErrorState(
+                        message = state.message,
+                        onRetry = viewModel::retry
+                    )
+                }
+                is SponsorsUiState.Success -> {
+                    AndroidView(
+                        factory = { ctx ->
+                            SponsorWallView(ctx).apply {
+                                setSponsors(state.repository.sponsors, state.repository.tiers)
+                                onSponsorClick = { sponsor ->
+                                    showSponsorInfo(context, sponsor)
+                                }
+                                onHighTierSponsorClick = { tier, x, y ->
+                                    konfettiView?.let {
+                                        playTierCelebration(it, tier, x, y)
+                                    }
+                                }
+                            }
+                        },
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+            }
+
             SponsorsTopBar(
                 onBack = onBack,
                 onSponsor = {
@@ -118,77 +123,32 @@ fun SponsorsScreen(
                     openSponsorPage(context)
                 }
             )
-            
-            // 内容区域
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .weight(1f)
-            ) {
-                when (val state = uiState) {
-                    is SponsorsUiState.Loading -> {
-                        LoadingState()
-                    }
-                    is SponsorsUiState.Error -> {
-                        ErrorState(
-                            message = state.message,
-                            onRetry = {
-                                uiState = SponsorsUiState.Loading
-                                scope.launch {
-                                    val result = sponsorService.fetchSponsors(forceRefresh = true)
-                                    result.fold(
-                                        onSuccess = { repository ->
-                                            if (repository.sponsors.isEmpty()) {
-                                                uiState = SponsorsUiState.Error(context.getString(R.string.sponsors_empty))
-                                            } else {
-                                                uiState = SponsorsUiState.Success(repository)
-                                            }
-                                        },
-                                        onFailure = { error ->
-                                            uiState = SponsorsUiState.Error(
-                                                context.getString(R.string.sponsors_error) + "\n" + error.message
-                                            )
-                                        }
-                                    )
-                                }
-                            }
-                        )
-                    }
-                    is SponsorsUiState.Success -> {
-                        // 使用 AndroidView 包装 SponsorWallView
-                        AndroidView(
-                            factory = { ctx ->
-                                SponsorWallView(ctx).apply {
-                                    setSponsors(state.repository.sponsors, state.repository.tiers)
-                                    onSponsorClick = { sponsor ->
-                                        showSponsorInfo(context, sponsor)
-                                    }
-                                    onHighTierSponsorClick = { tier, x, y ->
-                                        konfettiView?.let { 
-                                            playTierCelebration(it, tier, x, y) 
-                                        }
-                                    }
-                                }
-                            },
-                            modifier = Modifier.fillMaxSize()
-                        )
-                    }
-                }
-            }
-            
-            // 底部提示
+
             Text(
                 text = stringResource(R.string.sponsors_tip_gesture),
                 color = Color.White.copy(alpha = 0.4f),
                 fontSize = 12.sp,
                 modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
+                    .align(Alignment.BottomCenter)
                     .padding(bottom = 24.dp)
                     .clip(RoundedCornerShape(16.dp))
                     .background(Color.Black.copy(alpha = 0.3f))
                     .padding(horizontal = 16.dp, vertical = 6.dp)
             )
         }
+
+        // Konfetti 效果层保持在最前，覆盖赞助墙内容但不拦截手势
+        AndroidView(
+            factory = { ctx ->
+                KonfettiView(ctx).also { view ->
+                    view.isClickable = false
+                    view.isFocusable = false
+                    konfettiView = view
+                    startStarfieldEffect(view, scope)
+                }
+            },
+            modifier = Modifier.fillMaxSize()
+        )
     }
 }
 
@@ -363,12 +323,6 @@ private fun ErrorState(
             }
         }
     }
-}
-
-private sealed class SponsorsUiState {
-    data object Loading : SponsorsUiState()
-    data class Error(val message: String) : SponsorsUiState()
-    data class Success(val repository: SponsorRepository) : SponsorsUiState()
 }
 
 // Konfetti 效果函数
@@ -574,6 +528,7 @@ private fun playTierCelebration(view: KonfettiView, tier: SponsorTier, centerX: 
                 )
             )
         }
+
     }
 }
 

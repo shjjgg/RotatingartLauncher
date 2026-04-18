@@ -2,7 +2,7 @@ package com.app.ralaunch.feature.installer
 
 import com.app.ralaunch.R
 import com.app.ralaunch.RaLaunchApp
-import com.app.ralaunch.core.di.contract.GameListStorage
+import com.app.ralaunch.core.di.contract.IGameRepositoryServiceV3
 import java.io.File
 
 /**
@@ -11,7 +11,7 @@ import java.io.File
  *
  * 安装目录结构：
  * - GameInstaller 检测游戏类型，获取 gameId（如 "SMAPI", "Celeste", "Terraria"）
- * - GameListStorage 使用 gameId 生成存储 ID（如 "SMAPI_abc12345"）并创建目录
+ * - IGameRepositoryServiceV3 使用 gameId 生成存储 ID（如 "SMAPI_abc12345"）并创建目录
  * - 插件将游戏文件提取到此目录或其子目录
  * - game_info.json 必须位于存储根目录，其中 id 字段必须与目录名匹配
  * - game_info.json 中的路径（gameExePathRelative, iconPathRelative）相对于存储根目录
@@ -28,7 +28,7 @@ import java.io.File
  *   "gameId": "SMAPI"                          (game type identifier)
  *   "gameExePathRelative": "data/noarch/game/Stardew Valley.exe"
  */
-class GameInstaller(private val storage: GameListStorage) {
+class GameInstaller(private val gameRepository: IGameRepositoryServiceV3) {
     
     private var currentPlugin: GameInstallPlugin? = null
     
@@ -73,7 +73,7 @@ class GameInstaller(private val storage: GameListStorage) {
             ?: "unknown"
 
         // 通过 storage 创建游戏目录并获取存储 ID
-        val (gameStorageRoot, storageId) = storage.createGameStorageRoot(gameId)
+        val (gameStorageRoot, _) = gameRepository.createGameStorageRoot(gameId)
         val gameStorageRootFile = File(gameStorageRoot)
         
         // 执行安装

@@ -26,9 +26,10 @@ class PatchManager @JvmOverloads constructor(
     private var config: PatchManagerConfig
 
     init {
-        patchStoragePath = getDefaultPatchStorageDirectories(customStoragePath)
+        val patchStorageBasePath = getPatchStorageBaseDirectory(customStoragePath)
+        patchStoragePath = patchStorageBasePath.resolve(PATCH_STORAGE_DIR).normalize()
         if (!Files.isDirectory(patchStoragePath) || !Files.exists(patchStoragePath)) {
-            Files.deleteIfExists(patchStoragePath)
+            FileUtils.deleteFileWithinRoot(patchStoragePath, patchStorageBasePath)
             Files.createDirectories(patchStoragePath)
         }
         configFilePath = patchStoragePath.resolve(PatchManagerConfig.CONFIG_FILE_NAME)
@@ -144,7 +145,7 @@ class PatchManager @JvmOverloads constructor(
 
         if (Files.exists(patchPath)) {
             Log.i(TAG, "补丁已存在, 将删除原补丁目录，重新安装, patch id: ${manifest.id}")
-            if (!FileUtils.deleteDirectoryRecursively(patchPath)) {
+            if (!FileUtils.deleteDirectoryRecursivelyWithinRoot(patchPath, patchStoragePath)) {
                 Log.w(TAG, "删除原补丁目录时发生错误")
                 return false
             }
@@ -218,7 +219,7 @@ class PatchManager @JvmOverloads constructor(
             val dllPath = patchStoragePath.resolve(dllName)
             try {
                 if (Files.exists(dllPath)) {
-                    Files.delete(dllPath)
+                    FileUtils.deleteFileWithinRoot(dllPath, patchStoragePath)
                     Log.i(TAG, "已清理旧的共享 DLL: $dllName")
                 }
             } catch (e: IOException) {
@@ -241,7 +242,7 @@ class PatchManager @JvmOverloads constructor(
         )
 
         @Throws(IOException::class)
-        private fun getDefaultPatchStorageDirectories(customStoragePath: String?): Path {
+        private fun getPatchStorageBaseDirectory(customStoragePath: String?): Path {
             val context: Context = KoinJavaComponent.get(Context::class.java)
             val baseDir = customStoragePath ?: if (IS_DEFAULT_PATCH_STORAGE_DIR_EXTERNAL) {
                 Objects.requireNonNull(context.getExternalFilesDir(null))?.absolutePath
@@ -249,7 +250,7 @@ class PatchManager @JvmOverloads constructor(
             } else {
                 context.filesDir.absolutePath
             }
-            return Paths.get(baseDir, PATCH_STORAGE_DIR).normalize()
+            return Paths.get(baseDir).normalize()
         }
 
         @JvmStatic

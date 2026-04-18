@@ -1,4 +1,4 @@
-package com.app.ralaunch.feature.controls.views
+package com.app.ralaunch.feature.controls.ui
 
 import android.content.Context
 import android.graphics.Canvas
@@ -12,7 +12,7 @@ import android.graphics.Typeface
 import android.text.TextPaint
 import android.util.Log
 import android.view.View
-import com.app.ralaunch.core.di.service.VibrationManager
+import com.app.ralaunch.core.di.service.VibrationManagerServiceV1
 import org.koin.java.KoinJavaComponent
 import com.app.ralaunch.feature.controls.ControlData
 import com.app.ralaunch.feature.controls.ControlSpecialActionHandler
@@ -39,12 +39,12 @@ class VirtualButton(
         private const val TAG = "VirtualButton"
     }
 
-    // 使用 Koin 延迟获取 VibrationManager
-    private val vibrationManager: VibrationManager? by lazy {
+    // 使用 Koin 延迟获取 VibrationManagerServiceV1
+    private val vibrationManager: VibrationManagerServiceV1? by lazy {
         try {
-            KoinJavaComponent.get(VibrationManager::class.java)
+            KoinJavaComponent.get(VibrationManagerServiceV1::class.java)
         } catch (e: Exception) {
-            Log.w(TAG, "VibrationManager not available: ${e.message}")
+            Log.w(TAG, "VibrationManagerServiceV1 not available: ${e.message}")
             null
         }
     }

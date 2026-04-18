@@ -1,4 +1,4 @@
-package com.app.ralaunch.feature.sponsor
+package com.app.ralaunch.feature.sponsor.ui
 
 import android.graphics.Color
 import android.os.Build

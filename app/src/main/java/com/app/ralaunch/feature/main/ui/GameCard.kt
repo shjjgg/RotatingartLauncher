@@ -1,4 +1,4 @@
-package com.app.ralaunch.feature.main
+package com.app.ralaunch.feature.main.ui
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*

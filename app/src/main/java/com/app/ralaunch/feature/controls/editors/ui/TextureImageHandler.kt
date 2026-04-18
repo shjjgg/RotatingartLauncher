@@ -6,7 +6,7 @@ import com.app.ralaunch.feature.controls.ControlData
 import com.app.ralaunch.feature.controls.packs.ControlPackManager
 import com.app.ralaunch.feature.controls.textures.TextureConfig
 import com.app.ralaunch.feature.controls.textures.TextureLoader
-import com.app.ralaunch.feature.controls.views.ControlLayout as ControlLayoutView
+import com.app.ralaunch.feature.controls.ui.ControlLayout as ControlLayoutView
 import java.io.File
 import java.io.FileOutputStream
 

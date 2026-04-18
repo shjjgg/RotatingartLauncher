@@ -137,6 +137,11 @@ data class RendererOption(
     val description: String
 )
 
+data class DotNetRuntimeOption(
+    val version: String,
+    val description: String? = null
+)
+
 /**
  * 渲染器选择对话框（横屏双列布局）
  */
@@ -224,70 +229,85 @@ fun RendererSelectDialog(
     )
 }
 
-/**
- * 日志查看对话框
- */
 @Composable
-fun LogViewerDialog(
-    logs: List<String>,
-    onExport: () -> Unit,
-    onClear: () -> Unit,
+fun DotNetRuntimeSelectDialog(
+    currentRuntimeVersion: String?,
+    runtimes: List<DotNetRuntimeOption>,
+    onSelect: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
-    val titleText = stringResource(R.string.settings_logs_title)
-    val exportText = stringResource(R.string.export)
-    val clearText = stringResource(R.string.control_clear)
-    val emptyLogsText = stringResource(R.string.settings_logs_empty)
-    val closeText = stringResource(R.string.close)
+    val titleText = stringResource(R.string.runtime_selector_title_text)
+    val cancelText = stringResource(R.string.cancel)
+    val selectText = stringResource(R.string.runtime_select_version)
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        modifier = Modifier.widthIn(max = 600.dp),
         title = {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(titleText, fontWeight = FontWeight.Bold)
-                Row {
-                    TextButton(onClick = onExport) {
-                        Text(exportText)
-                    }
-                    TextButton(onClick = onClear) {
-                        Text(clearText)
-                    }
-                }
-            }
+            Text(titleText, fontWeight = FontWeight.Bold)
         },
         text = {
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(400.dp),
-                shape = RoundedCornerShape(8.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            Column(
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                if (logs.isEmpty()) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = emptyLogsText,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                } else {
-                    LazyColumn(
-                        modifier = Modifier.padding(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(2.dp)
-                    ) {
-                        items(logs) { log ->
-                            Text(
-                                text = log,
-                                style = MaterialTheme.typography.bodySmall,
-                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
-                            )
+                Text(
+                    text = selectText,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.heightIn(max = 320.dp)
+                ) {
+                    items(runtimes) { runtime ->
+                        val isSelected = runtime.version == currentRuntimeVersion
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    onSelect(runtime.version)
+                                    onDismiss()
+                                },
+                            shape = RoundedCornerShape(10.dp),
+                            color = if (isSelected) {
+                                MaterialTheme.colorScheme.primaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                            },
+                            border = if (isSelected) {
+                                BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+                            } else null
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                RadioButton(
+                                    selected = isSelected,
+                                    onClick = {
+                                        onSelect(runtime.version)
+                                        onDismiss()
+                                    }
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = runtime.version,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    runtime.description?.takeIf { it.isNotBlank() }?.let { description ->
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(
+                                            text = description,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -295,7 +315,7 @@ fun LogViewerDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text(closeText)
+                Text(cancelText)
             }
         }
     )
@@ -380,125 +400,3 @@ fun defaultLicenses() = listOf(
     LicenseInfo("FNA", "Ms-PL", "XNA 移植框架"),
     LicenseInfo("MonoMod", "MIT", "Mono 修改框架")
 )
-
-/**
- * 补丁信息
- */
-data class PatchInfo(
-    val name: String,
-    val version: String,
-    val description: String,
-    val isEnabled: Boolean = true
-)
-
-/**
- * 补丁管理对话框 - 简化版
- * 
- * 显示已安装的补丁列表，支持导入和删除补丁
- */
-@Composable
-fun PatchManagementDialog(
-    patches: List<PatchInfo> = emptyList(),
-    titleText: String,
-    importText: String,
-    emptyPatchesText: String,
-    emptyPatchesHintText: String,
-    closeText: String,
-    onImportPatch: () -> Unit = {},
-    onDeletePatch: (PatchInfo) -> Unit = {},
-    onTogglePatch: (PatchInfo, Boolean) -> Unit = { _, _ -> },
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(titleText, fontWeight = FontWeight.Bold)
-                TextButton(onClick = onImportPatch) {
-                    Text(importText)
-                }
-            }
-        },
-        text = {
-            if (patches.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text(
-                            text = emptyPatchesText,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = emptyPatchesHintText,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                        )
-                    }
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(300.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(patches) { patch ->
-                        Surface(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
-                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(12.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = patch.name,
-                                        style = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                    Text(
-                                        text = "v${patch.version}",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                    if (patch.description.isNotEmpty()) {
-                                        Text(
-                                            text = patch.description,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                }
-                                Switch(
-                                    checked = patch.isEnabled,
-                                    onCheckedChange = { onTogglePatch(patch, it) }
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text(closeText)
-            }
-        }
-    )
-}

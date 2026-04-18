@@ -953,6 +953,7 @@
     <string name="runtime_selector_title_text">.NET 运行时版本</string>
     <string name="runtime_current_version">当前版本</string>
     <string name="runtime_select_version">选择版本</string>
+    <string name="runtime_not_installed">未安装</string>
     
     <!-- Two Factor Dialog -->
     <string name="two_factor_email_title">邮箱验证</string>
@@ -1631,6 +1632,8 @@
     <string name="settings_controls_vibration_strength_title">震动强度</string>
     <string name="settings_game_performance_section">性能</string>
     <string name="settings_game_low_latency_audio_subtitle">降低音频延迟，可能增加功耗</string>
+    <string name="settings_game_runtime_section">运行时</string>
+    <string name="settings_game_runtime_subtitle">设置游戏默认使用的 .NET 运行时版本</string>
     <string name="settings_game_renderer_section">渲染</string>
     <string name="download_enter">进入</string>
     <string name="gog_no_linux_version">该游戏没有 Linux 版本</string>
@@ -2049,9 +2052,13 @@
     <string name="main_edit_display_info">更新显示信息</string>
     <string name="main_renderer_optional">渲染器（可选）</string>
     <string name="main_renderer_override">覆盖渲染器</string>
+    <string name="main_dotnet_runtime_optional">.NET 运行时（可选）</string>
+    <string name="main_dotnet_runtime_override">覆盖 .NET 运行时</string>
     <string name="renderer_select">选择渲染器</string>
     <string name="renderer_follow_global_settings">跟随全局设置</string>
     <string name="renderer_follow_global">跟随全局</string>
+    <string name="runtime_follow_global_settings">跟随全局设置</string>
+    <string name="runtime_follow_global">跟随全局</string>
     <string name="settings_logs_title">日志查看器</string>
     <string name="settings_logs_empty">暂无日志</string>
     <string name="color_picker_title">选择颜色</string>
